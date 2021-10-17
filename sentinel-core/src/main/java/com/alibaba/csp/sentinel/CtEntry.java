@@ -29,11 +29,13 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
  * @author Eric Zhao
  */
 class CtEntry extends Entry {
-
+    // 父节点
     protected Entry parent = null;
+    // 子节点
     protected Entry child = null;
 
     protected ProcessorSlot<Object> chain;
+    // 上下文
     protected Context context;
 
     CtEntry(ResourceWrapper resourceWrapper, ProcessorSlot<Object> chain, Context context) {
