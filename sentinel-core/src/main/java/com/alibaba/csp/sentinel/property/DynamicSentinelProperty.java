@@ -45,6 +45,11 @@ public class DynamicSentinelProperty<T> implements SentinelProperty<T> {
         listeners.remove(listener);
     }
 
+    /**
+     * 配置更新后调用该方法
+     * @param newValue the new value.
+     * @return
+     */
     @Override
     public boolean updateValue(T newValue) {
         if (isEqual(value, newValue)) {

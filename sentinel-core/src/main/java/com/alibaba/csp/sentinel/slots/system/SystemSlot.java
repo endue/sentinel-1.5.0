@@ -26,6 +26,8 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
  *
  * @author jialiang.linjl
  * @author leyou
+ *
+ * 流量控制
  */
 public class SystemSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 

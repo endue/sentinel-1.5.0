@@ -48,14 +48,28 @@ import com.alibaba.csp.sentinel.slots.block.BlockException;
  */
 public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
+    /**
+     *
+     * @param context         current {@link Context}
+     * @param resourceWrapper current resource
+     * @param node            参数node是关联到一个资源上的
+     * @param count           tokens needed
+     * @param prioritized     whether the entry is prioritized
+     * @param args            parameters of the original call
+     * @throws Throwable
+     */
     @Override
     public void entry(Context context, ResourceWrapper resourceWrapper, DefaultNode node, int count,
                       boolean prioritized, Object... args) throws Throwable {
         try {
             // Do some checking.
+            // 1. 通过node中的当前的实时统计指标信息进行规则校验
+            // 先将请求fire出去，交给后续slot
             fireEntry(context, resourceWrapper, node, count, prioritized, args);
 
             // Request passed, add thread count and pass count.
+            // 2. 走到这里说明通过了后面Slot的entry()方法校验,也就是没有被限流或降级,重新更新node中的实时指标数据
+            // 通过线程数+1、通过请求数+1
             node.increaseThreadNum();
             node.addPassRequest(count);
 
@@ -64,7 +78,7 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
                 context.getCurEntry().getOriginNode().increaseThreadNum();
                 context.getCurEntry().getOriginNode().addPassRequest(count);
             }
-
+            // 请求资源类型为EntryType.IN，修改Constants.ENTRY_NODE中的数据，在SystemSlot中会被SystemRuleManager.checkSystem()方法用到
             if (resourceWrapper.getType() == EntryType.IN) {
                 // Add count for global inbound entry node for global statistics.
                 Constants.ENTRY_NODE.increaseThreadNum();
@@ -75,6 +89,7 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
             for (ProcessorSlotEntryCallback<DefaultNode> handler : StatisticSlotCallbackRegistry.getEntryCallbacks()) {
                 handler.onPass(context, resourceWrapper, node, count, args);
             }
+        // 3. 如果被block或出现了异常了，则重新更新node中block的指标或异常指标
         } catch (PriorityWaitException ex) {
             node.increaseThreadNum();
             if (context.getCurEntry().getOriginNode() != null) {
@@ -140,11 +155,12 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
             }
 
             // Record response time and success count.
+            // 统计rt时间
             node.addRtAndSuccess(rt, count);
             if (context.getCurEntry().getOriginNode() != null) {
                 context.getCurEntry().getOriginNode().addRtAndSuccess(rt, count);
             }
-
+            // 减少线程数
             node.decreaseThreadNum();
 
             if (context.getCurEntry().getOriginNode() != null) {

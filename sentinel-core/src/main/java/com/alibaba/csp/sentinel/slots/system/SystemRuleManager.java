@@ -37,11 +37,15 @@ import com.alibaba.csp.sentinel.slots.block.BlockException;
  * Sentinel System Rule makes the inbound traffic and capacity meet. It takes
  * average rt, qps, thread count of incoming requests into account. And it also
  * provides a measurement of system's load, but only available on Linux.
+ * Sentinel System Rule 使入站流量和容量满足。它考虑了传入请求的平均rt、qps和线程计数。
+ * 它还提供了系统载荷的度量，但仅在Linux上可用。
  * </p>
  * <p>
  * rt, qps, thread count is easy to understand. If the incoming requests'
  * rt,qps, thread count exceeds its threshold, the requests will be
  * rejected.however, we use a different method to calculate the load.
+ * Rt, qps，线程数很容易理解。如果传入请求的rt、qps、线程数超过其阈值，则请求将被拒绝。
+ * 然而，我们使用一个不同的方法来计算载荷
  * </p>
  * <p>
  * Consider the system as a pipeline，transitions between constraints result in
@@ -70,6 +74,9 @@ public class SystemRuleManager {
      * cpu usage, between [0, 1]
      */
     private static volatile double highestCpuUsage = Double.MAX_VALUE;
+    /**
+     * 最高QPS
+     */
     private static volatile double qps = Double.MAX_VALUE;
     private static volatile long maxRt = Long.MAX_VALUE;
     private static volatile long maxThread = Long.MAX_VALUE;
@@ -82,19 +89,35 @@ public class SystemRuleManager {
     private static volatile boolean maxRtIsSet = false;
     private static volatile boolean maxThreadIsSet = false;
 
+    /**
+     * 是否校验系统相关相关状态，默认false
+     */
     private static AtomicBoolean checkSystemStatus = new AtomicBoolean(false);
-
+    /**
+     * 定时计算CPU的使用率以及当前系统负载
+     */
     private static SystemStatusListener statusListener = null;
+    /**
+     * 监听系统配置变化的监听器
+     */
     private final static SystemPropertyListener listener = new SystemPropertyListener();
+    /**
+     * 系统配置
+     */
     private static SentinelProperty<List<SystemRule>> currentProperty = new DynamicSentinelProperty<List<SystemRule>>();
 
+    /**
+     * 定时任务
+     */
     private final static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1,
         new NamedThreadFactory("sentinel-system-status-record-task", true));
 
     static {
         checkSystemStatus.set(false);
+        // 延迟5s执行，之后每1s执行一次，监听系统的CPU使用率以及负载
         statusListener = new SystemStatusListener();
         scheduler.scheduleAtFixedRate(statusListener, 5, 1, TimeUnit.SECONDS);
+        // 监听配置变化
         currentProperty.addListener(listener);
     }
 
@@ -240,6 +263,10 @@ public class SystemRuleManager {
         SystemRuleManager.highestSystemLoad = highestSystemLoad;
     }
 
+    /**
+     * 更新配置
+     * @param rule
+     */
     public static void loadSystemConf(SystemRule rule) {
         boolean checkStatus = false;
         // Check if it's valid.
@@ -285,33 +312,39 @@ public class SystemRuleManager {
      */
     public static void checkSystem(ResourceWrapper resourceWrapper) throws BlockException {
         // Ensure the checking switch is on.
+        // 1. 不校验系统相关状态，直接返回。默认校验
         if (!checkSystemStatus.get()) {
             return;
         }
 
         // for inbound traffic only
+        // 2. 只处理资源类型为EntryType.IN的
         if (resourceWrapper.getType() != EntryType.IN) {
             return;
         }
 
         // total qps
+        // 3. 获取当前请求成功的QPS
         double currentQps = Constants.ENTRY_NODE == null ? 0.0 : Constants.ENTRY_NODE.successQps();
         if (currentQps > qps) {
             throw new SystemBlockException(resourceWrapper.getName(), "qps");
         }
 
         // total thread
+        // 4. 获取当前请求成功的线程数
         int currentThread = Constants.ENTRY_NODE == null ? 0 : Constants.ENTRY_NODE.curThreadNum();
         if (currentThread > maxThread) {
             throw new SystemBlockException(resourceWrapper.getName(), "thread");
         }
 
+        // 5. 获取当前的rt平均值
         double rt = Constants.ENTRY_NODE == null ? 0 : Constants.ENTRY_NODE.avgRt();
         if (rt > maxRt) {
             throw new SystemBlockException(resourceWrapper.getName(), "rt");
         }
 
         // load. BBR algorithm.
+        // 6. 开启系统负载校验 && 当前系统负载超过最大值
         if (highestSystemLoadIsSet && getCurrentSystemAvgLoad() > highestSystemLoad) {
             if (!checkBbr(currentThread)) {
                 throw new SystemBlockException(resourceWrapper.getName(), "load");
@@ -319,6 +352,7 @@ public class SystemRuleManager {
         }
 
         // cpu usage
+        // 7. 开启CPU使用校验 && 当前CPU使用超过最大值
         if (highestCpuUsageIsSet && getCurrentCpuUsage() > highestCpuUsage) {
             if (!checkBbr(currentThread)) {
                 throw new SystemBlockException(resourceWrapper.getName(), "cpu");

@@ -213,6 +213,8 @@ public class NodeSelectorSlot extends AbstractLinkedProcessorSlot<Object> {
         }
 
         context.setCurNode(node);
+        // 下面进入ClusterBuilderSlot,由于NodeSelectorSlot是关联到一个资源上的
+        // 所以参数node是关联到一个资源上的
         fireEntry(context, resourceWrapper, node, count, prioritized, args);
     }
 
