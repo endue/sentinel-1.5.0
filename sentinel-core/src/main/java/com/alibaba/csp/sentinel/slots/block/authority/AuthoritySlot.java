@@ -44,18 +44,24 @@ public class AuthoritySlot extends AbstractLinkedProcessorSlot<DefaultNode> {
         fireExit(context, resourceWrapper, count, args);
     }
 
+    /**
+     * 校验白名单
+     * @param resource
+     * @param context
+     * @throws AuthorityException
+     */
     void checkBlackWhiteAuthority(ResourceWrapper resource, Context context) throws AuthorityException {
         Map<String, Set<AuthorityRule>> authorityRules = AuthorityRuleManager.getAuthorityRules();
 
         if (authorityRules == null) {
             return;
         }
-
+        // 获取资源名对应的规则
         Set<AuthorityRule> rules = authorityRules.get(resource.getName());
         if (rules == null) {
             return;
         }
-
+        // 校验
         for (AuthorityRule rule : rules) {
             if (!AuthorityRuleChecker.passCheck(rule, context)) {
                 throw new AuthorityException(context.getOrigin(), rule);
