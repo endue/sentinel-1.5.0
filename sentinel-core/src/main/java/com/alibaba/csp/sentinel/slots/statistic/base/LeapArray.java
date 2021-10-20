@@ -40,10 +40,21 @@ import com.alibaba.csp.sentinel.util.TimeUtil;
  */
 public abstract class LeapArray<T> {
 
+    /**
+     * 滑动时间窗口的长度，一个滑动时间窗口就是一个采样，单位：毫秒
+     */
     protected int windowLengthInMs;
+    /**
+     * 采样的的个数
+     */
     protected int sampleCount;
+    /**
+     * 采样的时间，单位：毫秒
+     */
     protected int intervalInMs;
-
+    /**
+     * 存储采样的数组，也就是将一个个的时间窗口数据进行包装，时间窗口的数据由泛型T来记录
+     */
     protected final AtomicReferenceArray<WindowWrap<T>> array;
 
     /**
@@ -61,7 +72,7 @@ public abstract class LeapArray<T> {
         AssertUtil.isTrue(sampleCount > 0, "bucket count is invalid: " + sampleCount);
         AssertUtil.isTrue(intervalInMs > 0, "total time interval of the sliding window should be positive");
         AssertUtil.isTrue(intervalInMs % sampleCount == 0, "time span needs to be evenly divided");
-
+        // 根据采样时间以及采样个数，计算滑动时间窗口的长度
         this.windowLengthInMs = intervalInMs / sampleCount;
         this.intervalInMs = intervalInMs;
         this.sampleCount = sampleCount;
@@ -73,6 +84,7 @@ public abstract class LeapArray<T> {
      * Get the bucket at current timestamp.
      *
      * @return the bucket at current timestamp
+     * 获取当前时间所在时间窗口的统计数据
      */
     public WindowWrap<T> currentWindow() {
         return currentWindow(TimeUtil.currentTimeMillis());
@@ -95,6 +107,14 @@ public abstract class LeapArray<T> {
      */
     protected abstract WindowWrap<T> resetWindowTo(WindowWrap<T> windowWrap, long startTime);
 
+    /**
+     * 计算参数时间戳所在采用数组的下标
+     * 如：timeMillis为1634738974000ms,windowLengthInMs为1000ms,也就是每1s当做一个采用周期.
+     * 假设array无限长，那么每1s就对应array数组的一个下标位置。timeMillis所对应的下标timeId就是timeMillis / windowLengthInMs的值。
+     * 但array不可能无限长，我们可以把array当做一个环,充分利用其下标位置。所以如果这样timeMillis对应的真正的下标就是timeId % array.length()
+     * @param timeMillis
+     * @return
+     */
     private int calculateTimeIdx(/*@Valid*/ long timeMillis) {
         long timeId = timeMillis / windowLengthInMs;
         // Calculate current index so we can map the timestamp to the leap array.
@@ -110,14 +130,16 @@ public abstract class LeapArray<T> {
      *
      * @param timeMillis a valid timestamp in milliseconds
      * @return current bucket item at provided timestamp if the time is valid; null if time is invalid
+     * 获取指定时间戳的统计数据
      */
     public WindowWrap<T> currentWindow(long timeMillis) {
         if (timeMillis < 0) {
             return null;
         }
-
+        // 1. 计算参数timeMillis在array数组的下标
         int idx = calculateTimeIdx(timeMillis);
         // Calculate current bucket start time.
+        // 2. 计算参数timeMillis所在滑动窗口的开始时间
         long windowStart = calculateWindowStart(timeMillis);
 
         /*
@@ -127,8 +149,10 @@ public abstract class LeapArray<T> {
          * (2) Bucket is up-to-date, then just return the bucket.
          * (3) Bucket is deprecated, then reset current bucket and clean all deprecated buckets.
          */
+        // 3. 获取参数timeMillis对应的采用窗口数据
         while (true) {
             WindowWrap<T> old = array.get(idx);
+            // 3.1 没有采用数据，初始化一个并更新进去
             if (old == null) {
                 /*
                  *     B0       B1      B2    NULL      B4
@@ -150,6 +174,7 @@ public abstract class LeapArray<T> {
                     // Contention failed, the thread will yield its time slice to wait for bucket available.
                     Thread.yield();
                 }
+            // 3.2 如果当前窗口的开始时间time与old的开始时间相等，那么说明old就是当前时间窗口，直接返回old
             } else if (windowStart == old.windowStart()) {
                 /*
                  *     B0       B1      B2     B3      B4
@@ -163,6 +188,7 @@ public abstract class LeapArray<T> {
                  * that means the time is within the bucket, so directly return the bucket.
                  */
                 return old;
+            // 3.3 如果当前窗口的开始时间time大于old的开始时间，则说明old窗口已经过时了，将old的开始时间更新为最新值windowStart
             } else if (windowStart > old.windowStart()) {
                 /*
                  *   (old)

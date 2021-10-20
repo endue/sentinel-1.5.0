@@ -27,6 +27,8 @@ import com.alibaba.csp.sentinel.slots.statistic.metric.DebugSupport;
  * @author qinan.qn
  * @author leyou
  * @author Eric Zhao
+ *
+ * 定义获取统计各种数据的方法
  */
 public interface Node extends OccupySupport, DebugSupport {
 

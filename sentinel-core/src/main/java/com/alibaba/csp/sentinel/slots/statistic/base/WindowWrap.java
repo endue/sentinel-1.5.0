@@ -26,16 +26,19 @@ public class WindowWrap<T> {
 
     /**
      * Time length of a single window bucket in milliseconds.
+     * 滑动时间窗口的长度，单位：毫秒
      */
     private final long windowLengthInMs;
 
     /**
      * Start timestamp of the window in milliseconds.
+     * 滑动时间窗口的开始时间，单位：毫秒
      */
     private long windowStart;
 
     /**
      * Statistic data.
+     * 该滑动时间窗口中的统计信息，起始就是MetricBucket类
      */
     private T value;
 
@@ -83,6 +86,7 @@ public class WindowWrap<T> {
      * @param timeMillis valid timestamp in ms
      * @return true if the given time is in current bucket, otherwise false
      * @since 1.5.0
+     * 判断参数时间戳是否在当前时间窗口中
      */
     public boolean isTimeInWindow(long timeMillis) {
         return windowStart <= timeMillis && timeMillis < windowStart + windowLengthInMs;

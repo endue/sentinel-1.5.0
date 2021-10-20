@@ -27,6 +27,9 @@ import com.alibaba.csp.sentinel.slots.statistic.base.LongAdder;
  */
 public class MetricBucket {
 
+    /**
+     * 统计各种指标
+     */
     private final LongAdder[] counters;
 
     private volatile long minRt;
