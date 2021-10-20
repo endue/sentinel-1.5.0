@@ -85,6 +85,7 @@ import com.alibaba.csp.sentinel.slots.statistic.metric.Metric;
  *
  * @author qinan.qn
  * @author jialiang.linjl
+ * 记录了各种统计信息
  */
 public class StatisticNode implements Node {
 

@@ -35,12 +35,15 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
  * @see ContextUtil
  * @see ContextUtil#enter(String, String)
  * @see NodeSelectorSlot
+ * 一个上下文开始的时候，会创建一个EntranceNode与之对应代表该上下文的入口
  */
 public class EntranceNode extends DefaultNode {
 
     public EntranceNode(ResourceWrapper id, ClusterNode clusterNode) {
         super(id, clusterNode);
     }
+
+    /* EntranceNode重写了获取数据统计的方法，获取的时候将所有子节点的数据全累加到一起后在返回 */
 
     @Override
     public double avgRt() {
