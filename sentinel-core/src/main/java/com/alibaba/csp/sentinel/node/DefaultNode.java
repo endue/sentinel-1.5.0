@@ -40,7 +40,7 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
  *
  * 初始化地点参考{@link NodeSelectorSlot#entry}
  * 相同resource name才会进入同一个NodeSelectorSlot，而在NodeSelectorSlot中根据ContextName获取对应的DefaultNode
- * 也就是DefaultNode和ContextName相关联，
+ * 也就是DefaultNode和ContextName相关联，即表示：同个资源在不同上下文中各自的流量情况
  */
 public class DefaultNode extends StatisticNode {
 
