@@ -37,6 +37,10 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
  *
  * @author qinan.qn
  * @see NodeSelectorSlot
+ *
+ * 初始化地点参考{@link NodeSelectorSlot#entry}
+ * 相同resource name才会进入同一个NodeSelectorSlot，而在NodeSelectorSlot中根据ContextName获取对应的DefaultNode
+ * 也就是DefaultNode和ContextName相关联，
  */
 public class DefaultNode extends StatisticNode {
 

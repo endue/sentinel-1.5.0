@@ -15,6 +15,7 @@
  */
 package com.alibaba.csp.sentinel.node;
 
+import com.alibaba.csp.sentinel.CtSph;
 import com.alibaba.csp.sentinel.context.Context;
 import com.alibaba.csp.sentinel.context.ContextUtil;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
@@ -35,7 +36,14 @@ import com.alibaba.csp.sentinel.slots.nodeselector.NodeSelectorSlot;
  * @see ContextUtil
  * @see ContextUtil#enter(String, String)
  * @see NodeSelectorSlot
- * 一个上下文开始的时候，会创建一个EntranceNode与之对应代表该上下文的入口
+ *
+ * 初始化地点参考{@link CtSph#entryWithPriority}
+ * 1. 一个线程对应一个Context，每个Context有一个ContextName
+ * 2. 一个ContextName对应一个EntranceNode
+ * 说明一个Context会创建一个EntranceNode与其对应(ContextName相同则是同一个EntranceNode)，代表该上下文的入口
+ *
+ * 参考{@link ContextUtil#trueEnter}
+ * 1. 每个EntranceNode都会挂在ROOT节点下面，ROOT是一个EntranceNode节点，且其是全局唯一的，它代表应用的入口
  */
 public class EntranceNode extends DefaultNode {
 
