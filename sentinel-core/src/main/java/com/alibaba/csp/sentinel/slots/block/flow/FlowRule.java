@@ -50,13 +50,14 @@ public class FlowRule extends AbstractRule {
 
     /**
      * The threshold type of flow control (0: thread count, 1: QPS).
-     * 对应新增流控规则页面的阈值类型 0：线程数 1：QPS
+     * 流控规则配置页面的"阈值类型" 0：线程数 1：QPS
      */
     private int grade = RuleConstant.FLOW_GRADE_QPS;
 
     /**
      * Flow control threshold count.
-     * 如果页面配置的是qps类型，字段则代表qps的值；如果配置的是线程数类型，字段则代表线程数
+     * 流控规则配置页面的"单机阈值"
+     * 如果页面配置的是qps类型，则代表qps的值；如果配置的是线程数类型，则代表线程数
      */
     private double count;
 
@@ -66,40 +67,47 @@ public class FlowRule extends AbstractRule {
      * {@link RuleConstant#STRATEGY_DIRECT} for direct flow control (by origin);
      * {@link RuleConstant#STRATEGY_RELATE} for relevant flow control (with relevant resource);
      * {@link RuleConstant#STRATEGY_CHAIN} for chain flow control (by entrance resource).
-     * 对应新增流控规则页面的流控策略
+     * 流控规则配置页面的"流控模式" 0：直连 1：关联 2：链路
      */
     private int strategy = RuleConstant.STRATEGY_DIRECT;
 
     /**
      * Reference resource in flow control with relevant resource or context.
-     * 对应流控策略为关联情况下，出现的关联资源 或 对应流控策略为链路情况下，出现的入口资源
+     * 流控规则配置页面的"关联资源"
      */
     private String refResource;
 
     /**
      * Rate limiter control behavior.
      * 0. default(reject directly), 1. warm up, 2. rate limiter, 3. warm up + rate limiter
-     * 对应新增流控规则页面的流控效果
+     * 流控规则配置页面的"流控效果" 0：快速失败 1：warm up 2：排队等待 3：warm up + 排队等待
      */
     private int controlBehavior = RuleConstant.CONTROL_BEHAVIOR_DEFAULT;
 
-    // 对应流控效果为Warm Up情况下，出现的预热时长
+    /**
+     * 流控规则配置页面的"流控效果"为Warm Up时，配置的"预热时长"
+     */
     private int warmUpPeriodSec = 10;
 
     /**
      * Max queueing time in rate limiter behavior.
-     * 对应流控效果为rate limiter情况下，出现的超时时间
+     * 流控规则配置页面的"流控效果"为rate limiter时，配置的"超时时间"
      */
     private int maxQueueingTimeMs = 500;
 
+    /**
+     * 流控规则配置页面的"是否集群"
+     */
     private boolean clusterMode;
     /**
      * Flow rule config for cluster mode.
+     * 流控规则配置页面的"是否集群"被选中时，记录集群相关配置
      */
     private ClusterFlowConfig clusterConfig;
 
     /**
      * The traffic shaping (throttling) controller.
+     * 流量控制效果（直接拒绝、Warm Up、匀速排队）
      */
     private TrafficShapingController controller;
 

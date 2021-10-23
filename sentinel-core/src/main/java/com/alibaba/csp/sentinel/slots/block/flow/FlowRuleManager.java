@@ -105,6 +105,12 @@ public class FlowRuleManager {
         return flowRules.containsKey(resource);
     }
 
+    /**
+     * 判断调用来源是否有针对其匹配的规则
+     * @param origin 调用来源
+     * @param resourceName 资源名称
+     * @return
+     */
     public static boolean isOtherOrigin(String origin, String resourceName) {
         if (StringUtil.isEmpty(origin)) {
             return false;

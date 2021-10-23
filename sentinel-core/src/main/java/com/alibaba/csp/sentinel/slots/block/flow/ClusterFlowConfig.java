@@ -33,8 +33,12 @@ public class ClusterFlowConfig {
 
     /**
      * Threshold type (average by local value or global value).
+     * 流控规则配置页面的"是否集群"被选中时，"集群阈值模式"的配置 0：单机均摊 1：总体阈值
      */
     private int thresholdType = ClusterRuleConstant.FLOW_THRESHOLD_AVG_LOCAL;
+    /**
+     * 流控规则配置页面的"是否集群"被选中时，"失败退化"的配置
+     */
     private boolean fallbackToLocalWhenFail = true;
 
     /**

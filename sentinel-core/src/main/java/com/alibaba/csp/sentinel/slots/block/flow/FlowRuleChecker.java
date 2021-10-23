@@ -31,98 +31,47 @@ import com.alibaba.csp.sentinel.util.StringUtil;
 
 /**
  * Rule checker for flow control rules.
- *
+ * 流控规则检查器
  * @author Eric Zhao
  */
 final class FlowRuleChecker {
 
+    /**
+     * 根据流控规则对流量进行控制
+     * @param rule
+     * @param context
+     * @param node
+     * @param acquireCount
+     * @return
+     */
     static boolean passCheck(/*@NonNull*/ FlowRule rule, Context context, DefaultNode node, int acquireCount) {
         return passCheck(rule, context, node, acquireCount, false);
     }
 
     static boolean passCheck(/*@NonNull*/ FlowRule rule, Context context, DefaultNode node, int acquireCount,
                                           boolean prioritized) {
+        // 获取控制台页面上的"针对来源"的值，默认值default
         String limitApp = rule.getLimitApp();
         if (limitApp == null) {
             return true;
         }
-
+        // 获取控制台页面上的"是否集群"的值,默认未勾选
         if (rule.isClusterMode()) {
             return passClusterCheck(rule, context, node, acquireCount, prioritized);
         }
-
+        // 本地模式限流实现
         return passLocalCheck(rule, context, node, acquireCount, prioritized);
     }
 
-    private static boolean passLocalCheck(FlowRule rule, Context context, DefaultNode node, int acquireCount,
-                                          boolean prioritized) {
-        Node selectedNode = selectNodeByRequesterAndStrategy(rule, context, node);
-        if (selectedNode == null) {
-            return true;
-        }
-
-        return rule.getRater().canPass(selectedNode, acquireCount, prioritized);
-    }
-
-    static Node selectReferenceNode(FlowRule rule, Context context, DefaultNode node) {
-        String refResource = rule.getRefResource();
-        int strategy = rule.getStrategy();
-
-        if (StringUtil.isEmpty(refResource)) {
-            return null;
-        }
-
-        if (strategy == RuleConstant.STRATEGY_RELATE) {
-            return ClusterBuilderSlot.getClusterNode(refResource);
-        }
-
-        if (strategy == RuleConstant.STRATEGY_CHAIN) {
-            if (!refResource.equals(context.getName())) {
-                return null;
-            }
-            return node;
-        }
-        // No node.
-        return null;
-    }
-
-    private static boolean filterOrigin(String origin) {
-        // Origin cannot be `default` or `other`.
-        return !RuleConstant.LIMIT_APP_DEFAULT.equals(origin) && !RuleConstant.LIMIT_APP_OTHER.equals(origin);
-    }
-
-    static Node selectNodeByRequesterAndStrategy(/*@NonNull*/ FlowRule rule, Context context, DefaultNode node) {
-        // The limit app should not be empty.
-        String limitApp = rule.getLimitApp();
-        int strategy = rule.getStrategy();
-        String origin = context.getOrigin();
-
-        if (limitApp.equals(origin) && filterOrigin(origin)) {
-            if (strategy == RuleConstant.STRATEGY_DIRECT) {
-                // Matches limit origin, return origin statistic node.
-                return context.getOriginNode();
-            }
-
-            return selectReferenceNode(rule, context, node);
-        } else if (RuleConstant.LIMIT_APP_DEFAULT.equals(limitApp)) {
-            if (strategy == RuleConstant.STRATEGY_DIRECT) {
-                // Return the cluster node.
-                return node.getClusterNode();
-            }
-
-            return selectReferenceNode(rule, context, node);
-        } else if (RuleConstant.LIMIT_APP_OTHER.equals(limitApp)
-            && FlowRuleManager.isOtherOrigin(origin, rule.getResource())) {
-            if (strategy == RuleConstant.STRATEGY_DIRECT) {
-                return context.getOriginNode();
-            }
-
-            return selectReferenceNode(rule, context, node);
-        }
-
-        return null;
-    }
-
+    /**
+     * 集群模式限流实现
+     * @param rule
+     * @param context
+     * @param node
+     * @param acquireCount
+     * @param prioritized
+     * @return
+     */
     private static boolean passClusterCheck(FlowRule rule, Context context, DefaultNode node, int acquireCount,
                                             boolean prioritized) {
         try {
@@ -140,6 +89,120 @@ final class FlowRuleChecker {
         // Fallback to local flow control when token client or server for this rule is not available.
         // If fallback is not enabled, then directly pass.
         return fallbackToLocalOrPass(rule, context, node, acquireCount, prioritized);
+    }
+
+    /**
+     * 本地模式限流实现
+     * @param rule
+     * @param context
+     * @param node
+     * @param acquireCount
+     * @param prioritized
+     * @return
+     */
+    private static boolean passLocalCheck(FlowRule rule, Context context, DefaultNode node, int acquireCount,
+                                          boolean prioritized) {
+        // 选择节点
+        Node selectedNode = selectNodeByRequesterAndStrategy(rule, context, node);
+        if (selectedNode == null) {
+            return true;
+        }
+        // 进行流控
+        return rule.getRater().canPass(selectedNode, acquireCount, prioritized);
+    }
+
+    /**
+     * 根据不同情况选择不同Node：DefaultNode、ClusterNode、OriginNode(StatisticNode)...
+     * @param rule
+     * @param context
+     * @param node
+     * @return
+     */
+    static Node selectNodeByRequesterAndStrategy(/*@NonNull*/ FlowRule rule, Context context, DefaultNode node) {
+        // The limit app should not be empty.
+        // 获取流控规则页面中配置的"针对来源",也就是流控针对的调用来源,若为default则不区分调用来源
+        String limitApp = rule.getLimitApp();
+        // 获取流控规则页面中配置的"流控模式"
+        int strategy = rule.getStrategy();
+        // 获取上下文中设置的调用来源,默认为""
+        String origin = context.getOrigin();
+        // 1. 判断当前调用来源与当前流控规则针对的调用来源是否相等并且当前调用来源不是"default"或者"other"这种特殊值
+        // 如下: 配置应用userCenter对资源A的QPS为1,
+        //  FlowRule rule1 = new FlowRule();
+        //  rule1.setResource("A");
+        //  rule1.setCount(1);
+        //  rule1.setGrade(RuleConstant.FLOW_GRADE_QPS);
+        //  rule1.setLimitApp("userCenter");
+        if (limitApp.equals(origin) && filterOrigin(origin)) {
+            // 1.1 流控规则页面上"流控模式"为"直接",获取调用来源userCenter的统计数据对应的Node
+            if (strategy == RuleConstant.STRATEGY_DIRECT) {
+                // Matches limit origin, return origin statistic node.
+                return context.getOriginNode();
+            }
+            // 1.2 流控规则页面上"流控模式"为"关联"或者"链路"
+            return selectReferenceNode(rule, context, node);
+        // 2. 当前流控规则针对的调用来源为"default",也就是不区分调用来源
+        } else if (RuleConstant.LIMIT_APP_DEFAULT.equals(limitApp)) {
+            // 2.1 页面上"流控模式"为直接,获取当前资源A的ClusterNode,因为其表示所有应用对该资源的所有请求统计数据
+            if (strategy == RuleConstant.STRATEGY_DIRECT) {
+                // Return the cluster node.
+                return node.getClusterNode();
+            }
+            // 2.2 页面上"流控模式"为关联或者链路的处理
+            return selectReferenceNode(rule, context, node);
+        // 3. 这里并不是表示当前流控规则针对的调用来源为"other"而是我们在设置了limitApp为other值后[如:注释中增加rule2然后设置rule2.setLimitApp("other"),其他配置一样]
+        // 那么rule2只会处理调用来源非"userCenter"的请求
+        } else if (RuleConstant.LIMIT_APP_OTHER.equals(limitApp)
+                && FlowRuleManager.isOtherOrigin(origin, rule.getResource())) {
+            if (strategy == RuleConstant.STRATEGY_DIRECT) {
+                return context.getOriginNode();
+            }
+
+            return selectReferenceNode(rule, context, node);
+        }
+
+        return null;
+    }
+
+    /**
+     * 当流控规则页面上"流控模式"为"关联"或者"链路"
+     * @param rule
+     * @param context
+     * @param node
+     * @return
+     */
+    static Node selectReferenceNode(FlowRule rule, Context context, DefaultNode node) {
+        // 获取流控规则配置的"关联资源"
+        String refResource = rule.getRefResource();
+        // 获取流控规则配置的"流控模式"
+        int strategy = rule.getStrategy();
+        // 设置了"关联资源"模式，但是没有关联任何资源，那么也就没有关联资源的node，所以返回null
+        if (StringUtil.isEmpty(refResource)) {
+            return null;
+        }
+        // 流控模式为"关联"，获取关联资源refResource的ClusterNode，参考官网案例{@link https://github.com/alibaba/Sentinel/wiki/%E6%B5%81%E9%87%8F%E6%8E%A7%E5%88%B6}
+        // 以官网write_db和read_db为例，当read_db请求的时候，是把write_db的ClusterNode与规则进行比较，
+        // 那么问题就有答案了，假设write_db一直没有请求，那么read_db就没有限制，因为write_db的ClusterNode数据为空
+        if (strategy == RuleConstant.STRATEGY_RELATE) {
+            return ClusterBuilderSlot.getClusterNode(refResource);
+        }
+
+        // 流控模式为"链路"，这个听上去有点懵逼，参考官网案例{@link https://github.com/alibaba/Sentinel/wiki/%E6%B5%81%E9%87%8F%E6%8E%A7%E5%88%B6}
+        // 以官网为例，假设两个线程同时访问资源A，那么在资源A上会有两个上下文Entrance1和Entrance2，假设我们只想对某个调用链路进行流控，我们可以设置流控规则为
+        // STRATEGY_CHAIN同时设置refResource为Entrance1来表示只有从入口Entrance1的调用才会记录到A的限流统计当中，而不关心经Entrance2的调用
+        if (strategy == RuleConstant.STRATEGY_CHAIN) {
+            if (!refResource.equals(context.getName())) {
+                return null;
+            }
+            return node;
+        }
+        // No node.
+        return null;
+    }
+
+    private static boolean filterOrigin(String origin) {
+        // Origin cannot be `default` or `other`.
+        return !RuleConstant.LIMIT_APP_DEFAULT.equals(origin) && !RuleConstant.LIMIT_APP_OTHER.equals(origin);
     }
 
     private static boolean fallbackToLocalOrPass(FlowRule rule, Context context, DefaultNode node, int acquireCount,

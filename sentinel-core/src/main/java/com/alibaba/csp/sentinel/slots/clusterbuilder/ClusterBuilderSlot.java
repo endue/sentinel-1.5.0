@@ -103,6 +103,8 @@ public class ClusterBuilderSlot extends AbstractLinkedProcessorSlot<DefaultNode>
         /*
          * if context origin is set, we should get or create a new {@link Node} of
          * the specific origin.
+         * 在用户手动设置origign时,设置一个StatisticNode又叫originNode
+         * 如: ContextUtil.enter("db", "userCenter");
          */
         if (!"".equals(context.getOrigin())) {
             Node originNode = node.getClusterNode().getOrCreateOriginNode(context.getOrigin());

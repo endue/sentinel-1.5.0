@@ -73,6 +73,8 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
             node.increaseThreadNum();
             node.addPassRequest(count);
 
+            // 如果用户手动设置了origin,如: ContextUtil.enter("db", "userCenter")则会在ClusterBuilderSlot中添加一个OriginNode
+            // 所以这里统计调用情况时也需要修改OriginNode中的统计信息
             if (context.getCurEntry().getOriginNode() != null) {
                 // Add count for origin node.
                 context.getCurEntry().getOriginNode().increaseThreadNum();
