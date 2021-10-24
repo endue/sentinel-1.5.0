@@ -42,11 +42,14 @@ public class ParamFlowRule extends AbstractRule {
 
     /**
      * The threshold type of flow control (0: thread count, 1: QPS).
+     * 限流模式
      */
     private int grade = RuleConstant.FLOW_GRADE_QPS;
 
     /**
      * Parameter index.
+     * 热点参数的索引，必填，对应 SphU.entry(xxx, args) 中的参数索引位置
+     *
      */
     private Integer paramIdx;
 
@@ -57,6 +60,18 @@ public class ParamFlowRule extends AbstractRule {
 
     /**
      * Original exclusion items of parameters.
+     * 参数例外项，可以针对指定的参数值单独设置限流阈值，不受前面 count 阈值的限制。仅支持基本类型和字符串类型
+     * 如下：
+     * ParamFlowRule rule = new ParamFlowRule(resourceName)
+     *     .setParamIdx(0)
+     *     .setCount(5);
+     * // 针对 int 类型的参数 PARAM_B，单独设置限流 QPS 阈值为 10，而不是全局的阈值 5.
+     * ParamFlowItem item = new ParamFlowItem().setObject(String.valueOf(PARAM_B))
+     *     .setClassType(int.class.getName())
+     *     .setCount(10);
+     * rule.setParamFlowItemList(Collections.singletonList(item));
+     *
+     * ParamFlowRuleManager.loadRules(Collections.singletonList(rule));
      */
     private List<ParamFlowItem> paramFlowItemList = new ArrayList<ParamFlowItem>();
 

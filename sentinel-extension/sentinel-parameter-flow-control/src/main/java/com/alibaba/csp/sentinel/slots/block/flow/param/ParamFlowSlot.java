@@ -38,6 +38,9 @@ import com.alibaba.csp.sentinel.util.StringUtil;
  */
 public class ParamFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
+    /**
+     * 资源与其对应多个Rule所需要的限流指标数据
+     */
     private static final Map<ResourceWrapper, ParameterMetric> metricsMap
         = new ConcurrentHashMap<ResourceWrapper, ParameterMetric>();
 
@@ -65,26 +68,32 @@ public class ParamFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     void checkFlow(ResourceWrapper resourceWrapper, int count, Object... args)
         throws BlockException {
+        // 首先校验要访问的资源是否有热点参数限流
         if (ParamFlowRuleManager.hasRules(resourceWrapper.getName())) {
+            // 获取资源对应的ParamFlowRule
             List<ParamFlowRule> rules = ParamFlowRuleManager.getRulesOfResource(resourceWrapper.getName());
             if (rules == null) {
                 return;
             }
-
+            // 遍历所有ParamFlowRule
             for (ParamFlowRule rule : rules) {
+                // 获取规则中配置的参数下标
                 int paramIdx = rule.getParamIdx();
+                // 参数是倒着填写的，重新计算参数位置
                 if (paramIdx < 0) {
                     if (-paramIdx <= args.length) {
                         rule.setParamIdx(args.length + paramIdx);
                     } else {
                         // illegal index, give it a illegal positive value, latter rule check will pass
+                        // 非法索引，给它一个非法的正数，后规则检查将通过
                         rule.setParamIdx(-paramIdx);
                     }
                 }
 
                 // Initialize the parameter metrics.
+                // 初始化该资源下，该参数对应的令牌桶
                 initHotParamMetricsFor(resourceWrapper, rule.getParamIdx());
-
+                // 获取令牌
                 if (!ParamFlowChecker.passCheck(resourceWrapper, rule, count, args)) {
 
                     // Here we add the block count.
@@ -113,8 +122,8 @@ public class ParamFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
      * Init the parameter metric and index map for given resource.
      * Package-private for test.
      *
-     * @param resourceWrapper resource to init
-     * @param index           index to initialize, which must be valid
+     * @param resourceWrapper resource to init 被访问的资源
+     * @param index           index to initialize, which must be valid 参数下标位置
      */
     void initHotParamMetricsFor(ResourceWrapper resourceWrapper, /*@Valid*/ int index) {
         ParameterMetric metric;
@@ -131,6 +140,11 @@ public class ParamFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
         metric.initializeForIndex(index);
     }
 
+    /**
+     * 获取资源下所有热点参数统计指标
+     * @param resourceWrapper
+     * @return
+     */
     public static ParameterMetric getParamMetric(ResourceWrapper resourceWrapper) {
         if (resourceWrapper == null || resourceWrapper.getName() == null) {
             return null;

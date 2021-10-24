@@ -38,10 +38,17 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
  */
 public class ParameterMetric {
 
+    /**
+     * 采样的个数，也就是滑动时间窗口的个数
+     */
     private final int sampleCount;
+    /**
+     * 采样的时间，单位：毫秒
+     */
     private final int intervalMs;
 
     public ParameterMetric() {
+        // 默认采用时间1000ms，采用个数2.也就是每500ms是一个窗口，最多两个窗口
         this(SampleCountProperty.SAMPLE_COUNT, IntervalProperty.INTERVAL);
     }
 
@@ -53,8 +60,14 @@ public class ParameterMetric {
         this.intervalMs = intervalInMs;
     }
 
+    /**
+     * 热点参数QPS滑动窗口指标,key是参数索引下标，value是统计信息
+     */
     private Map<Integer, HotParameterLeapArray> rollingParameters =
         new ConcurrentHashMap<Integer, HotParameterLeapArray>();
+    /**
+     * 热点参数线程数指标,key是参数索引下标，value是统计信息
+     */
     private Map<Integer, CacheMap<Object, AtomicInteger>> threadCountMap =
         new ConcurrentHashMap<Integer, CacheMap<Object, AtomicInteger>>();
 
@@ -248,12 +261,20 @@ public class ParameterMetric {
         }
     }
 
+    /**
+     * 获取当前时间窗口下某参数下标下具体某个值的PASSED统计指标
+     * @param index
+     * @param value
+     * @return
+     */
     public double getPassParamQps(int index, Object value) {
         try {
+            // 获取该索引下标下对应参数的统计信息
             HotParameterLeapArray parameter = rollingParameters.get(index);
             if (parameter == null || value == null) {
                 return -1;
             }
+            // 这一步就是获取对应参数值的统计信息了，因为不同参数值会对应不同的指标
             return parameter.getRollingAvg(RollingParamEvent.REQUEST_PASSED, value);
         } catch (Throwable e) {
             RecordLog.info(e.getMessage(), e);

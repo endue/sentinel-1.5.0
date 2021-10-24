@@ -31,6 +31,9 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
  */
 public class ParamMapBucket {
 
+    /**
+     * key是参数具体的值，vaue是计数
+     */
     private final CacheMap<Object, AtomicInteger>[] data;
 
     public ParamMapBucket() {

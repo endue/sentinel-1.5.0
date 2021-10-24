@@ -67,13 +67,17 @@ final class ParamFlowChecker {
     private static boolean passLocalCheck(ResourceWrapper resourceWrapper, ParamFlowRule rule, int count,
                                           Object value) {
         try {
+            // 参数是集合类型
             if (Collection.class.isAssignableFrom(value.getClass())) {
+                // 遍历集合拿参数
                 for (Object param : ((Collection)value)) {
                     if (!passSingleValueCheck(resourceWrapper, rule, count, param)) {
                         return false;
                     }
                 }
+            // 参是数组类型
             } else if (value.getClass().isArray()) {
+                // 遍历数组拿参数
                 int length = Array.getLength(value);
                 for (int i = 0; i < length; i++) {
                     Object param = Array.get(value, i);
@@ -81,6 +85,7 @@ final class ParamFlowChecker {
                         return false;
                     }
                 }
+            // 其他类型
             } else {
                 return passSingleValueCheck(resourceWrapper, rule, count, value);
             }
@@ -93,7 +98,10 @@ final class ParamFlowChecker {
 
     static boolean passSingleValueCheck(ResourceWrapper resourceWrapper, ParamFlowRule rule, int count, Object value) {
         Set<Object> exclusionItems = rule.getParsedHotItems().keySet();
+        // QPS限流模式
         if (rule.getGrade() == RuleConstant.FLOW_GRADE_QPS) {
+            // 首先获取资源下统计热点参数统计指标的对象
+            // 根据上一步的对象获取某参数索引下标下具体某个参数值的统计数据
             double curCount = getHotParameters(resourceWrapper).getPassParamQps(rule.getParamIdx(), value);
 
             if (exclusionItems.contains(value)) {
@@ -119,6 +127,11 @@ final class ParamFlowChecker {
         return true;
     }
 
+    /**
+     * 获取资源下所有热点参数统计指标
+     * @param resourceWrapper
+     * @return
+     */
     private static ParameterMetric getHotParameters(ResourceWrapper resourceWrapper) {
         // Should not be null.
         return ParamFlowSlot.getParamMetric(resourceWrapper);
