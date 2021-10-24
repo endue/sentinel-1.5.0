@@ -33,7 +33,7 @@ class CtEntry extends Entry {
     protected Entry parent = null;
     // 子节点
     protected Entry child = null;
-
+    // 被访问资源对应的处理链
     protected ProcessorSlot<Object> chain;
     // 上下文
     protected Context context;
@@ -91,6 +91,8 @@ class CtEntry extends Entry {
                 }
                 if (parent == null) {
                     // Default context (auto entered) will be exited automatically.
+                    // 如果用户没有手动调用ContextUtil.enter("xxx")而是使用默认的，这里会给我们调用ContextUtil.exit();
+                    // 否则需要开发人员手动调用ContextUtil.exit();
                     if (ContextUtil.isDefaultContext(context)) {
                         ContextUtil.exit();
                     }
