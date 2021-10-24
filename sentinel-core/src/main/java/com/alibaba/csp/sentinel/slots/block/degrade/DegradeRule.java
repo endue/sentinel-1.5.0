@@ -68,19 +68,25 @@ public class DegradeRule extends AbstractRule {
 
     /**
      * RT threshold or exception ratio threshold count.
+     * 慢调用比例模式下为慢调用临界 RT（超出该值计为慢调用）；异常比例/异常数模式下为对应的阈值
      */
     private double count;
 
     /**
      * Degrade recover timeout (in seconds) when degradation occurs.
+     * 降级时间窗口，单位为s，会在该事件窗口内，程序无法访问
      */
     private int timeWindow;
 
     /**
      * Degrade strategy (0: average RT, 1: exception ratio).
+     * 降级策略，0：调用比例 1：异常比例: 2：异常数策略
      */
     private int grade = RuleConstant.DEGRADE_GRADE_RT;
 
+    /**
+     * 是否正处于熔断状态
+     */
     private final AtomicBoolean cut = new AtomicBoolean(false);
 
     public int getGrade() {
@@ -164,12 +170,13 @@ public class DegradeRule extends AbstractRule {
         if (cut.get()) {
             return false;
         }
-
+        // 获取资源对应的ClusterNode
         ClusterNode clusterNode = ClusterBuilderSlot.getClusterNode(this.getResource());
         if (clusterNode == null) {
             return true;
         }
-
+        // 下面判断就比较简单了，就是根据当前DegradeRule对应的降级策略进行判断
+        // 符合条件就降级，然后生成定时任务。等待timeWindow秒后关闭降级
         if (grade == RuleConstant.DEGRADE_GRADE_RT) {
             double rt = clusterNode.avgRt();
             if (rt < this.count) {
