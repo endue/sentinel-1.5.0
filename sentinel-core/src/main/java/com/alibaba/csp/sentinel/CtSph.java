@@ -145,7 +145,8 @@ public class CtSph implements Sph {
         if (chain == null) {
             return new CtEntry(resourceWrapper, null, context);
         }
-        // 同一个线程每一次请求都会创建一个Entry,然后更新context.parent的child以及context.curEntry
+        // 当同一个线程多次请求，每次都会创建一个Entry
+        // 然后更新该线程对应context中的curEntry以及新curEntry的parent和旧curEntry的child
         Entry e = new CtEntry(resourceWrapper, chain, context);
         try {
             chain.entry(context, resourceWrapper, null, count, prioritized, args);

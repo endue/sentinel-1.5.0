@@ -133,38 +133,7 @@ public class NodeSelectorSlot extends AbstractLinkedProcessorSlot<Object> {
     private volatile Map<String, DefaultNode> map = new HashMap<String, DefaultNode>(10);
 
     /**
-     * 首先要明白不同线程都进入同一个NodeSelectorSlot实例时，说明他们的resource name是一样的。
-     * 也就是多个线程处理同一个resource的时候，会进入到同一个NodeSelectorSlot对象实例中。NodeSelectorSlot与线程无关，与resource name有关
-     *
-     * 该方法用于构建当前线程的调用树
-     * 示例代码如下：
-     * private static void getUserInfoFromDB(String acountId) {
-     *     ContextUtil.enter("db");
-     *     try{
-     *        Entry entry=SphU.entry("A");
-     *        Entry entry=SphU.entry("B");
-     *        Entry entry=SphU.entry("C");
-     *        Entry entry=SphU.entry("D");
-     *        Entry entry=SphU.entry("E");
-     *        // ...
-     *     }catch (BlockException e) {
-     *         e.printStackTrace();
-     *     }
-     * }
-     * 调用树如下：
-     *        machine-root
-     *            \
-     *            db
-     *             \
-     *             A
-     *             \
-     *              B
-     *              \
-     *               C
-     *               \
-     *                D
-     *                \
-     *                 E
+     * 基于该方法不同name的Context都会为当前资源创建一个单独的DefaultNode
      * @param context         current {@link Context}
      * @param resourceWrapper current resource
      * @param obj
@@ -213,8 +182,6 @@ public class NodeSelectorSlot extends AbstractLinkedProcessorSlot<Object> {
         }
 
         context.setCurNode(node);
-        // 下面进入ClusterBuilderSlot,由于NodeSelectorSlot是关联到一个资源上的
-        // 所以参数node是关联到一个资源上的
         fireEntry(context, resourceWrapper, node, count, prioritized, args);
     }
 
