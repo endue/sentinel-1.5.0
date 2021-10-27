@@ -75,7 +75,7 @@ public class ClusterBuilderSlot extends AbstractLinkedProcessorSlot<DefaultNode>
      * 对于每一个resource，这里会对应一个ClusterNode实例，如果不存在就创建一个实例
      * @param context         current {@link Context}
      * @param resourceWrapper current resource
-     * @param node
+     * @param node            某个资源针对某个上下文创建的DefaultNode
      * @param count           tokens needed
      * @param args            parameters of the original call
      * @throws Throwable
@@ -103,8 +103,10 @@ public class ClusterBuilderSlot extends AbstractLinkedProcessorSlot<DefaultNode>
         /*
          * if context origin is set, we should get or create a new {@link Node} of
          * the specific origin.
-         * 在用户手动设置origign时,设置一个StatisticNode又叫originNode
+         * 如果用户手动设置了origign,那么创建一个StatisticNode又名originNode，记录到ClusterNode的map中
          * 如: ContextUtil.enter("db", "userCenter");
+         * 这里其实就是针对访问同一资源的上下文，如果有上下文设置了origin，那么创建一个与之对应的StatisticNode
+         * 记录到ClusterNode的map中
          */
         if (!"".equals(context.getOrigin())) {
             Node originNode = node.getClusterNode().getOrCreateOriginNode(context.getOrigin());

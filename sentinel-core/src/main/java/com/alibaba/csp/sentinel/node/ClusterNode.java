@@ -49,6 +49,7 @@ public class ClusterNode extends StatisticNode {
      * So we didn't use concurrent map here, but a lock, as this lock only happens
      * at the very beginning while concurrent map will hold the lock all the time.
      * </p>
+     * 计算不同上下文访问同一资源时，针对每个上下文的origin创建的StatisticNode
      */
     private Map<String, StatisticNode> originCountMap = new HashMap<String, StatisticNode>();
 
@@ -61,6 +62,7 @@ public class ClusterNode extends StatisticNode {
      *
      * @param origin The caller's name, which is designated in the {@code parameter} parameter
      *               {@link ContextUtil#enter(String name, String origin)}.
+     *               每个上下文可以手动输入一个origin，例如：ContextUtil.enter("db", "userCenter");
      * @return the {@link Node} of the specific origin
      */
     public Node getOrCreateOriginNode(String origin) {
