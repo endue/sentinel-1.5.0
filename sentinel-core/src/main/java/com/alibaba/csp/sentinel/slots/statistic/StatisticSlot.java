@@ -52,7 +52,7 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
      *
      * @param context         current {@link Context}
      * @param resourceWrapper current resource
-     * @param node            参数node是关联到一个资源上的
+     * @param node            当前资源针对当前线程创建的DefaultNode
      * @param count           tokens needed
      * @param prioritized     whether the entry is prioritized
      * @param args            parameters of the original call
@@ -63,23 +63,24 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
                       boolean prioritized, Object... args) throws Throwable {
         try {
             // Do some checking.
-            // 1. 通过node中的当前的实时统计指标信息进行规则校验
-            // 先将请求fire出去，交给后续slot
+            // 1. 先将请求fire出去，交给后续slot进行check，包括规则的check，黑白名单check
             fireEntry(context, resourceWrapper, node, count, prioritized, args);
 
             // Request passed, add thread count and pass count.
             // 2. 走到这里说明通过了后面Slot的entry()方法校验,也就是没有被限流或降级,重新更新node中的实时指标数据
-            // 通过线程数+1、通过请求数+1
+
+            // 2.1 当前资源针对当前线程创建的node中的线程数+1、通过请求数+1
             node.increaseThreadNum();
             node.addPassRequest(count);
 
-            // 如果用户手动设置了origin,如: ContextUtil.enter("db", "userCenter")则会在ClusterBuilderSlot中添加一个OriginNode
-            // 所以这里统计调用情况时也需要修改OriginNode中的统计信息
+            // 2.2 如果用户手动设置了origin,如: ContextUtil.enter("db", "userCenter")则会在ClusterBuilderSlot中添加一个OriginNode
+            // 统计来源线程数+1、通过请求数+1
             if (context.getCurEntry().getOriginNode() != null) {
                 // Add count for origin node.
                 context.getCurEntry().getOriginNode().increaseThreadNum();
                 context.getCurEntry().getOriginNode().addPassRequest(count);
             }
+            // 3. 统计入口全局流量
             // 请求资源类型为EntryType.IN，修改Constants.ENTRY_NODE中的数据，在SystemSlot中会被SystemRuleManager.checkSystem()方法用到
             if (resourceWrapper.getType() == EntryType.IN) {
                 // Add count for global inbound entry node for global statistics.
@@ -91,7 +92,7 @@ public class StatisticSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
             for (ProcessorSlotEntryCallback<DefaultNode> handler : StatisticSlotCallbackRegistry.getEntryCallbacks()) {
                 handler.onPass(context, resourceWrapper, node, count, args);
             }
-        // 3. 如果被block或出现了异常了，则重新更新node中block的指标或异常指标
+        // 4. 遇到限流策略
         } catch (PriorityWaitException ex) {
             node.increaseThreadNum();
             if (context.getCurEntry().getOriginNode() != null) {

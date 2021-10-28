@@ -75,7 +75,7 @@ public class ClusterBuilderSlot extends AbstractLinkedProcessorSlot<DefaultNode>
      * 对于每一个resource，这里会对应一个ClusterNode实例，如果不存在就创建一个实例
      * @param context         current {@link Context}
      * @param resourceWrapper current resource
-     * @param node            某个资源针对某个上下文创建的DefaultNode
+     * @param node            当前资源针对当前线程创建的DefaultNode
      * @param count           tokens needed
      * @param args            parameters of the original call
      * @throws Throwable
