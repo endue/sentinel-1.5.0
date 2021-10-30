@@ -41,14 +41,30 @@ public class SystemRule extends AbstractRule {
 
     /**
      * negative value means no threshold checking.
+     * 系统阈值，负值表示不进行阈值检查
+     * 对应系统规则页面的"LOAD"
      */
     private double highestSystemLoad = -1;
     /**
      * cpu usage, between [0, 1]
+     * CPU使用率
+     *  对应系统规则页面的"CPU使用率"
      */
     private double highestCpuUsage = -1;
+    /**
+     * QPS数量，要求类型为EntryType.IN的访问
+     * 对应系统规则页面的"入口 QPS"
+     */
     private double qps = -1;
+    /**
+     * 平均rt时间
+     * 对应系统规则页面的"RT"
+     */
     private long avgRt = -1;
+    /**
+     * 最大线程数
+     * 对应系统规则页面的"线程数"
+     */
     private long maxThread = -1;
 
     public double getQps() {

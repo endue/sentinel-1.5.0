@@ -69,19 +69,20 @@ import com.alibaba.csp.sentinel.slots.block.BlockException;
  */
 public class SystemRuleManager {
 
+    /**
+     * 系统默认值
+     */
     private static volatile double highestSystemLoad = Double.MAX_VALUE;
     /**
      * cpu usage, between [0, 1]
      */
     private static volatile double highestCpuUsage = Double.MAX_VALUE;
-    /**
-     * 最高QPS
-     */
     private static volatile double qps = Double.MAX_VALUE;
     private static volatile long maxRt = Long.MAX_VALUE;
     private static volatile long maxThread = Long.MAX_VALUE;
     /**
      * mark whether the threshold are set by user.
+     * 标记相关值，是否由用户设置
      */
     private static volatile boolean highestSystemLoadIsSet = false;
     private static volatile boolean highestCpuUsageIsSet = false;
@@ -90,19 +91,19 @@ public class SystemRuleManager {
     private static volatile boolean maxThreadIsSet = false;
 
     /**
-     * 是否校验系统相关相关状态，默认false
+     * 是否校验配置的系统规则，默认false
      */
     private static AtomicBoolean checkSystemStatus = new AtomicBoolean(false);
     /**
-     * 定时计算CPU的使用率以及当前系统负载
+     * 定时计算CPU的使用率以及系统负载
      */
     private static SystemStatusListener statusListener = null;
     /**
-     * 监听系统配置变化的监听器
+     * 监听系统规则配置变化的监听器
      */
     private final static SystemPropertyListener listener = new SystemPropertyListener();
     /**
-     * 系统配置
+     * 保存系统配置
      */
     private static SentinelProperty<List<SystemRule>> currentProperty = new DynamicSentinelProperty<List<SystemRule>>();
 
@@ -114,8 +115,9 @@ public class SystemRuleManager {
 
     static {
         checkSystemStatus.set(false);
-        // 延迟5s执行，之后每1s执行一次，监听系统的CPU使用率以及负载
+        // 初始化系统CPU和负载监听器
         statusListener = new SystemStatusListener();
+        // 启动定时任务延迟5s执行，之后每1s执行一次，监听系统的CPU使用率以及负载
         scheduler.scheduleAtFixedRate(statusListener, 5, 1, TimeUnit.SECONDS);
         // 监听配置变化
         currentProperty.addListener(listener);
@@ -312,7 +314,7 @@ public class SystemRuleManager {
      */
     public static void checkSystem(ResourceWrapper resourceWrapper) throws BlockException {
         // Ensure the checking switch is on.
-        // 1. 不校验系统相关状态，直接返回。默认校验
+        // 1. 不校验系统相关状态，直接返回。默认不校验
         if (!checkSystemStatus.get()) {
             return;
         }
@@ -344,7 +346,7 @@ public class SystemRuleManager {
         }
 
         // load. BBR algorithm.
-        // 6. 开启系统负载校验 && 当前系统负载超过最大值
+        // 6. 用户重新设置了系统负载阈值 && 当前系统负载超过用户设置的值
         if (highestSystemLoadIsSet && getCurrentSystemAvgLoad() > highestSystemLoad) {
             if (!checkBbr(currentThread)) {
                 throw new SystemBlockException(resourceWrapper.getName(), "load");
@@ -352,7 +354,7 @@ public class SystemRuleManager {
         }
 
         // cpu usage
-        // 7. 开启CPU使用校验 && 当前CPU使用超过最大值
+        // 7. 户重新设置了CPU阈值 && 当前CPU使用率超过用户设置的值
         if (highestCpuUsageIsSet && getCurrentCpuUsage() > highestCpuUsage) {
             if (!checkBbr(currentThread)) {
                 throw new SystemBlockException(resourceWrapper.getName(), "cpu");

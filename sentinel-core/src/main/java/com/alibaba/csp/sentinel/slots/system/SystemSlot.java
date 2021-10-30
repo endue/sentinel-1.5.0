@@ -30,6 +30,16 @@ import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
  */
 public class SystemSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
+    /**
+     *
+     * @param context         current {@link Context}
+     * @param resourceWrapper current resource
+     * @param node            当前资源针对当前线程创建的DefaultNode
+     * @param count           tokens needed
+     * @param prioritized     whether the entry is prioritized
+     * @param args            parameters of the original call
+     * @throws Throwable
+     */
     @Override
     public void entry(Context context, ResourceWrapper resourceWrapper, DefaultNode node, int count,
                       boolean prioritized, Object... args) throws Throwable {
