@@ -29,6 +29,7 @@ public class AuthorityRule extends AbstractRule {
 
     /**
      * Mode: 0 for whitelist; 1 for blacklist.
+     * 0：白名单 1：黑名单
      */
     private int strategy = RuleConstant.AUTHORITY_WHITE;
 

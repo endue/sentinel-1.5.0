@@ -45,7 +45,7 @@ public class AuthoritySlot extends AbstractLinkedProcessorSlot<DefaultNode> {
     }
 
     /**
-     * 校验白名单
+     * 校验黑白名单
      * @param resource
      * @param context
      * @throws AuthorityException
@@ -56,7 +56,7 @@ public class AuthoritySlot extends AbstractLinkedProcessorSlot<DefaultNode> {
         if (authorityRules == null) {
             return;
         }
-        // 获取资源名对应的规则
+        // 获取被访问资源对应的首先规则
         Set<AuthorityRule> rules = authorityRules.get(resource.getName());
         if (rules == null) {
             return;

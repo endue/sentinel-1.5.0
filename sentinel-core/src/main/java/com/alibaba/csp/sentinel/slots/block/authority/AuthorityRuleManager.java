@@ -38,9 +38,12 @@ import com.alibaba.csp.sentinel.property.SentinelProperty;
  * @author Eric Zhao
  */
 public final class AuthorityRuleManager {
-
+    /**
+     * 保存所有的授信规则
+     * key是授信规则页面的"资源名"，也就是针对哪个资源做了授信规则验证
+     */
     private static Map<String, Set<AuthorityRule>> authorityRules = new ConcurrentHashMap<>();
-
+    // 监听授信规则配置进行实时更新
     private static final RulePropertyListener LISTENER = new RulePropertyListener();
     private static SentinelProperty<List<AuthorityRule>> currentProperty = new DynamicSentinelProperty<>();
 
