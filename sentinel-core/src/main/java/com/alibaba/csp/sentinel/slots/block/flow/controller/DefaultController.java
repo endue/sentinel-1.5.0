@@ -35,6 +35,9 @@ public class DefaultController implements TrafficShapingController {
 
     private static final int DEFAULT_AVG_USED_TOKENS = 0;
 
+    /**
+     * 流控规则中配置的阔值(即一个时间窗口中总的令牌个数)
+     */
     private double count;
     /**
      * 流程规则页面配置的"阈值类型"：QPS或线程数
@@ -60,19 +63,23 @@ public class DefaultController implements TrafficShapingController {
      */
     @Override
     public boolean canPass(Node node, int acquireCount, boolean prioritized) {
-        // 获取node当前请求的thread数或者QPS数
+        // 获取当前时间node中已通过的thread数或者QPS数，也就是已消耗的token
         int curCount = avgUsedTokens(node);
-        // 已请求数量和当前请求的数量相加判断是否超过阈值
+        // 已消耗token + acquireCount > 规则设定的count,则返回false，否则返回true
+        // todo 如果并发执行到这里并没有加锁，所以多个线程都会返回true，限流失效。因为在StatisticSlot中是先放行后统计
         if (curCount + acquireCount > count) {
-            // 优先请求并且是QPS的情况下对进来的请求进行特殊处理：占用下一个时间窗口的令牌
-            // 首先尝试去占用后面的时间窗口的令牌，获取到等待时间，如果等待时间小于设置的最长等待时长
-            // 那么就进行等待，当等待到指定时间后抛出PriorityWaitException。否则直接返回false不放行
+            // 进入到这里说明请求所要消耗的token已经超过了当前时间窗口的阈值
+
+            // 如果prioritized为true表示优先请求并且流控规则是QPS的情况下对进来的请求进行特殊处理：占用下一个时间窗口的令牌
             if (prioritized && grade == RuleConstant.FLOW_GRADE_QPS) {
                 long currentTime;
                 long waitInMs;
                 currentTime = TimeUtil.currentTimeMillis();
+                // 尝试去占用下一个时间窗口的令牌，并返回该时间窗口所剩余的时间waitInMs
                 waitInMs = node.tryOccupyNext(currentTime, acquireCount, count);
+                // 如果waitInMs小于抢占的最大超时时间，则在下一个时间窗口中增加对应令牌数，并且线程将sleep
                 if (waitInMs < OccupyTimeoutProperty.getOccupyTimeout()) {
+                    // 占用下一个时间窗口的token
                     node.addWaitingRequest(currentTime + waitInMs, acquireCount);
                     node.addOccupiedPass(acquireCount);
                     sleep(waitInMs);

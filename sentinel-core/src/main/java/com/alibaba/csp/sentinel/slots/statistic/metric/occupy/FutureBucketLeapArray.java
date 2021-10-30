@@ -24,6 +24,7 @@ import com.alibaba.csp.sentinel.slots.statistic.data.MetricBucket;
  *
  * @author jialiang.linjl
  * @since 1.5.0
+ * 该类是LeapArray的子类，用来存储借用了未来哪个时间桶的token以及借用了多少
  */
 public class FutureBucketLeapArray extends LeapArray<MetricBucket> {
 

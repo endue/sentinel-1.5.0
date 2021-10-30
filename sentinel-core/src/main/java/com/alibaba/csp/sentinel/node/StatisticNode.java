@@ -281,15 +281,28 @@ public class StatisticNode implements Node {
         rollingCounterInSecond.debug();
     }
 
+    /**
+     * 尝试占用下一个时间窗口的令牌
+     * @param currentTime  current time millis. 调用该方法时，获取的当前时间戳
+     * @param acquireCount tokens count to acquire. 要获取的token数
+     * @param threshold    qps threshold. QPS阈值
+     * @return
+     */
     @Override
     public long tryOccupyNext(long currentTime, int acquireCount, double threshold) {
+        // threshold是一个时间窗口的token阈值
+        // IntervalProperty.INTERVAL / 1000是多少个时间窗口
+        // 最终计算出来的就是一个采样周期token的个数
         double maxCount = threshold * IntervalProperty.INTERVAL / 1000;
+        // 计算采用周期内被占用的token个数
         long currentBorrow = rollingCounterInSecond.waiting();
+        // 超过阈值了，返回OccupyTimeout
         if (currentBorrow >= maxCount) {
             return OccupyTimeoutProperty.getOccupyTimeout();
         }
-
+        // 计算时间窗口的长度
         int windowLength = IntervalProperty.INTERVAL / SampleCountProperty.SAMPLE_COUNT;
+
         long earliestTime = currentTime - currentTime % windowLength + windowLength - IntervalProperty.INTERVAL;
 
         int idx = 0;
@@ -321,6 +334,11 @@ public class StatisticNode implements Node {
         return rollingCounterInSecond.waiting();
     }
 
+    /**
+     * 占用未来时间点futureTime对应的时间窗口的token
+     * @param futureTime   future timestamp that the acquireCount should be added on.
+     * @param acquireCount tokens count.
+     */
     @Override
     public void addWaitingRequest(long futureTime, int acquireCount) {
         rollingCounterInSecond.addWaiting(futureTime, acquireCount);

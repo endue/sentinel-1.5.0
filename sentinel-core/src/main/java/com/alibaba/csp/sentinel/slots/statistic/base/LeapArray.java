@@ -45,7 +45,7 @@ public abstract class LeapArray<T> {
      */
     protected int windowLengthInMs;
     /**
-     * 采样的的个数
+     * 时间窗口的个数，也就是需要采样几个时间窗口
      */
     protected int sampleCount;
     /**

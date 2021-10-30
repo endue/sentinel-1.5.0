@@ -28,6 +28,10 @@ import com.alibaba.csp.sentinel.slots.statistic.data.MetricBucket;
  */
 public class OccupiableBucketLeapArray extends LeapArray<MetricBucket> {
 
+    /**
+     * borrow 借用的意思
+     *
+     */
     private final FutureBucketLeapArray borrowArray;
 
     public OccupiableBucketLeapArray(int sampleCount, int intervalInMs) {
@@ -39,7 +43,7 @@ public class OccupiableBucketLeapArray extends LeapArray<MetricBucket> {
     @Override
     public MetricBucket newEmptyBucket(long time) {
         MetricBucket newBucket = new MetricBucket();
-
+        // 如果曾经有借用过未来的滑动窗口，则将未来的滑动窗口上收集的数据copy到新创建的采集指标上，再返回
         MetricBucket borrowBucket = borrowArray.getWindowValue(time);
         if (borrowBucket != null) {
             newBucket.reset(borrowBucket);
@@ -75,6 +79,13 @@ public class OccupiableBucketLeapArray extends LeapArray<MetricBucket> {
         return currentWaiting;
     }
 
+    /**
+     * 这里用在DefaultController中，当prioritized为true，表示占用未来时间窗口的token
+     * 所以获取time对应的时间窗口，然后将该窗口PASS数加acquireCount,最终占用了time所在
+     * 时间窗口的token数
+     * @param time
+     * @param acquireCount
+     */
     @Override
     public void addWaiting(long time, int acquireCount) {
         WindowWrap<MetricBucket> window = borrowArray.currentWindow(time);
