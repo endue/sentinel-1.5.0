@@ -59,7 +59,7 @@ final class FlowRuleChecker {
         if (rule.isClusterMode()) {
             return passClusterCheck(rule, context, node, acquireCount, prioritized);
         }
-        // 本地模式限流实现
+        // 本地模式流控实现
         return passLocalCheck(rule, context, node, acquireCount, prioritized);
     }
 
@@ -107,7 +107,7 @@ final class FlowRuleChecker {
         if (selectedNode == null) {
             return true;
         }
-        // 进行流控
+        // 流控规则校验.rule.getRater()获取流控效果：快速失败、Warm Up、排队等待
         return rule.getRater().canPass(selectedNode, acquireCount, prioritized);
     }
 
@@ -120,44 +120,46 @@ final class FlowRuleChecker {
      */
     static Node selectNodeByRequesterAndStrategy(/*@NonNull*/ FlowRule rule, Context context, DefaultNode node) {
         // The limit app should not be empty.
-        // 获取流控规则页面中配置的"针对来源",也就是流控针对的调用来源,若为default则不区分调用来源
+        // 获取"针对来源",也就是流控针对的调用来源,若为default则不区分调用来源
         String limitApp = rule.getLimitApp();
-        // 获取流控规则页面中配置的"流控模式"
+        // 获取"流控模式" 0：直连 1：关联 2：链路
         int strategy = rule.getStrategy();
-        // 获取上下文中设置的调用来源,默认为""
+        // 获取当前线程上下文中设置的调用来源,默认为""
+        // 用户访问资源前可手动设置：ContextUtil.enter(resource, origin)
         String origin = context.getOrigin();
-        // 1. 判断当前调用来源与当前流控规则针对的调用来源是否相等并且当前调用来源不是"default"或者"other"这种特殊值
-        // 如下: 配置应用userCenter对资源A的QPS为1,
+        // 如下: 配置流控规则针对调用来源为userCenter的对资源A的访问QPS为1,
         //  FlowRule rule1 = new FlowRule();
         //  rule1.setResource("A");
         //  rule1.setCount(1);
         //  rule1.setGrade(RuleConstant.FLOW_GRADE_QPS);
         //  rule1.setLimitApp("userCenter");
+        // 1. 判断调用来源origin与当前流控规则的针对来源limitApp是否匹配并且调用来源origin不是"default"或者"other"这种值
         if (limitApp.equals(origin) && filterOrigin(origin)) {
-            // 1.1 流控规则页面上"流控模式"为"直接",获取调用来源userCenter的统计数据对应的Node
+            // 1.1 "流控模式"为"直接",获取针对来源limitApp的全局统计数据对应的Node，也就是OriginNode
             if (strategy == RuleConstant.STRATEGY_DIRECT) {
                 // Matches limit origin, return origin statistic node.
                 return context.getOriginNode();
             }
-            // 1.2 流控规则页面上"流控模式"为"关联"或者"链路"
+            // 1.2 "流控模式"为"关联"或"链路"
             return selectReferenceNode(rule, context, node);
-        // 2. 当前流控规则针对的调用来源为"default",也就是不区分调用来源
+        // 2. 当前流控规则针对来源为"default",也就是不区分调用来源
         } else if (RuleConstant.LIMIT_APP_DEFAULT.equals(limitApp)) {
-            // 2.1 页面上"流控模式"为直接,获取当前资源A的ClusterNode,因为其表示所有应用对该资源的所有请求统计数据
+            // 2.1 "流控模式"为直接,获取当前线程持有的当前资源A的ClusterNode,因为这种不区分调用来源，只针对当前资源A进行全局的流控
             if (strategy == RuleConstant.STRATEGY_DIRECT) {
                 // Return the cluster node.
                 return node.getClusterNode();
             }
-            // 2.2 页面上"流控模式"为关联或者链路的处理
+            // 2.2 "流控模式"为"关联"或"链路"
             return selectReferenceNode(rule, context, node);
-        // 3. 这里并不是表示当前流控规则针对的调用来源为"other"而是我们在设置了limitApp为other值后[如:注释中增加rule2然后设置rule2.setLimitApp("other"),其他配置一样]
-        // 那么rule2只会处理调用来源非"userCenter"的请求
+        // 3. 这里并不是表示当前流控规则针对的调用来源为"other"而是在设置了limitApp为other值后
+        // 如:注释中增加rule2然后设置rule2.setLimitApp("other")，其他配置一样。那么rule2只会处理调用来源为非"userCenter"的请求
         } else if (RuleConstant.LIMIT_APP_OTHER.equals(limitApp)
                 && FlowRuleManager.isOtherOrigin(origin, rule.getResource())) {
+            // // 3.1 "流控模式"为"直接",获取针对来源limitApp的全局统计数据对应的Node，也就是OriginNode
             if (strategy == RuleConstant.STRATEGY_DIRECT) {
                 return context.getOriginNode();
             }
-
+            // 3.2 "流控模式"为"关联"或"链路"
             return selectReferenceNode(rule, context, node);
         }
 
@@ -165,18 +167,18 @@ final class FlowRuleChecker {
     }
 
     /**
-     * 当流控规则页面上"流控模式"为"关联"或者"链路"
+     * 当流控规则页面上"流控模式"为"关联"或者"链路"，获取对应资源的Node
      * @param rule
      * @param context
      * @param node
      * @return
      */
     static Node selectReferenceNode(FlowRule rule, Context context, DefaultNode node) {
-        // 获取流控规则配置的"关联资源"
+        // "流控模式"为"关联"或者"链路"时，获取对应的"关联资源"或"入口资源"
         String refResource = rule.getRefResource();
-        // 获取流控规则配置的"流控模式"
+        // 获取"流控模式"
         int strategy = rule.getStrategy();
-        // 设置了"关联资源"模式，但是没有关联任何资源，那么也就没有关联资源的node，所以返回null
+        // "关联资源"或"入口资源"未配置，也就表示没有关联任何资源的node，所以返回null
         if (StringUtil.isEmpty(refResource)) {
             return null;
         }

@@ -73,7 +73,8 @@ public class FlowRule extends AbstractRule {
 
     /**
      * Reference resource in flow control with relevant resource or context.
-     * 流控规则配置页面的"关联资源"
+     * 流控模式为关联时，流控规则配置页面的"关联资源"
+     * 流控模式为链路时，流控规则配置页面的"入口资源"
      */
     private String refResource;
 

@@ -24,7 +24,7 @@ import com.alibaba.csp.sentinel.node.Node;
 
 /**
  * @author jialiang.linjl
- * 漏桶算法，达到匀速通过请求
+ * 漏桶算法，达到匀速通过请求，流控效果为排队等待
  */
 public class RateLimiterController implements TrafficShapingController {
 
@@ -52,7 +52,7 @@ public class RateLimiterController implements TrafficShapingController {
 
     /**
      * 通过阅读该方法的相关源码可以知道，当突然收到大量请求时，也是会有短暂的洪峰的。
-     * 在过一段时间后才会到达匀速模式，下面是测试打印{@link com.alibaba.csp.sentinel.demo.flow.PaceFlowDemo#simulatePulseFlow()}的日志：
+     * 在过一段时间后才会到达匀速模式，下面是测试用例{@link com.alibaba.csp.sentinel.demo.flow.PaceFlowDemo#simulatePulseFlow()}的日志：
      * 1634981070077 one request pass, cost 100 ms
      * 1634981070077 one request pass, cost 100 ms
      * 1634981070077 one request pass, cost 100 ms
@@ -92,7 +92,7 @@ public class RateLimiterController implements TrafficShapingController {
         // 如果期望时间 <= 当前时间，那么说明当前令牌充足可以放行，同时将当前时间设置为上次通过时间
         if (expectedTime <= currentTime) {
             // Contention may exist here, but it's okay.
-            // 注意：这里可以看出当大量并发请求过来时，会存在暂短的洪峰
+            // todo 这里可以看出当大量并发请求过来时，会存在暂短的洪峰
             latestPassedTime.set(currentTime);
             return true;
         // 期望时间 > 当前时间，令牌不够，需要等待
@@ -103,14 +103,23 @@ public class RateLimiterController implements TrafficShapingController {
             if (waitTime > maxQueueingTimeMs) {
                 return false;
             } else {
+                // 需要等待时间 <= 设置的最大等待时长
+                // 由于此时可以等待，那么立即更新下一次通过的时间，当下一个请求到达时，会基于当前请求的通过时间来计算所需等待的时间
+                // 比如：请求1、请求2依次到达，latestPassedTime为10:01:05，
+                // 请求1需要等待1s，于是更新latestPassedTime为10:01:06，当请求2到达时，获取的latestPassedTime将会是请求1更新后的值
                 long oldTime = latestPassedTime.addAndGet(costTime);
                 try {
+                    // 重新计算需要等待的实际，由于并发的原因此时可能请求2先到达更新了latestPassedTime
+                    // 所以需要重新计算一个请求1的等待时间
                     waitTime = oldTime - TimeUtil.currentTimeMillis();
+                    // 超过了阈值，那么由于上面更新了latestPassedTime，所以这里要减掉
+                    // todo 减掉执行前，其他请求进来，有可能会被拒绝掉
                     if (waitTime > maxQueueingTimeMs) {
                         latestPassedTime.addAndGet(-costTime);
                         return false;
                     }
                     // in race condition waitTime may <= 0
+                    // 等待一段时间后，通过请求
                     if (waitTime > 0) {
                         Thread.sleep(waitTime);
                     }

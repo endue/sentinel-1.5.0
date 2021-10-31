@@ -145,11 +145,12 @@ public class FlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     void checkFlow(ResourceWrapper resource, Context context, DefaultNode node, int count, boolean prioritized) throws BlockException {
         // Flow rule map cannot be null.
-        // 获取所有的流量规则
+        // 获取所有的流控规则
         Map<String, List<FlowRule>> flowRules = FlowRuleManager.getFlowRuleMap();
-        // 获取资源名对应的流量规则并进行校验
+        // 获取被访问资源对应的流控规则
         List<FlowRule> rules = flowRules.get(resource.getName());
         if (rules != null) {
+            // 校验被访问资源对应的所有流控规则
             for (FlowRule rule : rules) {
                 if (!canPassCheck(rule, context, node, count, prioritized)) {
                     throw new FlowException(rule.getLimitApp(), rule);
