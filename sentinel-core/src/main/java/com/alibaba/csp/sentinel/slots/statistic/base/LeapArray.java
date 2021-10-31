@@ -188,7 +188,7 @@ public abstract class LeapArray<T> {
                  * that means the time is within the bucket, so directly return the bucket.
                  */
                 return old;
-            // 3.3 如果当前窗口的开始时间time大于old的开始时间，则说明old窗口已经过时了，将old的开始时间更新为最新值windowStart
+            // 3.3 如果当前窗口的开始时间time大于old的开始时间，则说明old窗口已经过时了，将old的开始时间更新为最新值windowStart。重用该事件窗口
             } else if (windowStart > old.windowStart()) {
                 /*
                  *   (old)
