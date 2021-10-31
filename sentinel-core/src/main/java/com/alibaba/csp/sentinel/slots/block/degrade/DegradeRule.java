@@ -60,6 +60,9 @@ public class DegradeRule extends AbstractRule {
      */
     private static final int RT_MAX_EXCEED_N = 5;
 
+    /**
+     * 定时任务执行线程池
+     */
     private static ScheduledExecutorService pool = Executors.newScheduledThreadPool(
         Runtime.getRuntime().availableProcessors(), new NamedThreadFactory("sentinel-degrade-reset-task", true));
 
@@ -261,6 +264,9 @@ public class DegradeRule extends AbstractRule {
             this.rule = rule;
         }
 
+        /**
+         * 重置DegradeRule中的passCount和cut
+         */
         @Override
         public void run() {
             rule.getPassCount().set(0);
