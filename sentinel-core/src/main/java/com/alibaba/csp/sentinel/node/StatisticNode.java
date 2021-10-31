@@ -184,6 +184,10 @@ public class StatisticNode implements Node {
         return rollingCounterInMinute.success();
     }
 
+    /**
+     * 获取所有滑动窗口的异常总数，然后除以滑动窗口的个数，求平均每个滑动窗口的异常值
+     * @return
+     */
     @Override
     public double exceptionQps() {
         return rollingCounterInSecond.exception() / rollingCounterInSecond.getWindowIntervalInSec();

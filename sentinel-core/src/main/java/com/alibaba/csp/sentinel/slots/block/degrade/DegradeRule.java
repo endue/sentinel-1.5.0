@@ -55,6 +55,9 @@ import com.alibaba.csp.sentinel.slots.clusterbuilder.ClusterBuilderSlot;
  */
 public class DegradeRule extends AbstractRule {
 
+    /**
+     * 默认值为5，目前不支持设定
+     */
     private static final int RT_MAX_EXCEED_N = 5;
 
     private static ScheduledExecutorService pool = Executors.newScheduledThreadPool(
@@ -68,7 +71,7 @@ public class DegradeRule extends AbstractRule {
 
     /**
      * RT threshold or exception ratio threshold count.
-     * 慢调用比例模式下为慢调用临界 RT（超出该值计为慢调用）；异常比例/异常数模式下为对应的阈值
+     * 慢调用比例模式下为慢调用临界 RT（超出该值计为慢调用）；异常比例或异常数模式下为对应的阈值
      */
     private double count;
 
@@ -165,19 +168,30 @@ public class DegradeRule extends AbstractRule {
         return result;
     }
 
+    /**
+     * 校验是否需要降级
+     * @param context current {@link Context}
+     * @param node    current {@link com.alibaba.csp.sentinel.node.Node}
+     * @param acquireCount
+     * @param args    arguments of the original invocation.
+     * @return
+     */
     @Override
     public boolean passCheck(Context context, DefaultNode node, int acquireCount, Object... args) {
+        // 1. 判断是否处于熔断状态，如果是则直接返回
         if (cut.get()) {
             return false;
         }
-        // 获取资源对应的ClusterNode
+        // 2. 获取被访问资源的ClusterNode，不存在不降级
         ClusterNode clusterNode = ClusterBuilderSlot.getClusterNode(this.getResource());
         if (clusterNode == null) {
             return true;
         }
         // 下面判断就比较简单了，就是根据当前DegradeRule对应的降级策略进行判断
         // 符合条件就降级，然后生成定时任务。等待timeWindow秒后关闭降级
+        // 3. 降级规则中降级策略为RT
         if (grade == RuleConstant.DEGRADE_GRADE_RT) {
+            // 3.1 获取资源的ClusterNode中的平均rt，小于阈值不降级
             double rt = clusterNode.avgRt();
             if (rt < this.count) {
                 passCount.set(0);
@@ -185,33 +199,41 @@ public class DegradeRule extends AbstractRule {
             }
 
             // Sentinel will degrade the service only if count exceeds.
+            // 3.2 走到这里说明平均rt大于等于阈值了
+            // 但是前RT_MAX_EXCEED_N - 1次，是不降级的，只有连续≥RT_MAX_EXCEED_N时，才降级
             if (passCount.incrementAndGet() < RT_MAX_EXCEED_N) {
                 return true;
             }
+        // 4. 降级规则中降级策略为异常比例
         } else if (grade == RuleConstant.DEGRADE_GRADE_EXCEPTION_RATIO) {
+            // 4.1 获取资源的ClusterNode中的平均每个滑动窗口的异常QPS、成功QPS、总QPS
             double exception = clusterNode.exceptionQps();
             double success = clusterNode.successQps();
             double total = clusterNode.totalQps();
             // if total qps less than RT_MAX_EXCEED_N, pass.
+            // 4.2 总QPS ＜ RT_MAX_EXCEED_N，不触发降级规则
             if (total < RT_MAX_EXCEED_N) {
                 return true;
             }
-
+            // 4.3 成功QPS ＜ RT_MAX_EXCEED_N，不触发降级规则
             double realSuccess = success - exception;
             if (realSuccess <= 0 && exception < RT_MAX_EXCEED_N) {
                 return true;
             }
-
+            // 4.4 异常比率 ＜ 阈值，不触发降级规则
             if (exception / success < count) {
                 return true;
             }
+        // 5.  级规则中降级策略为异常数
         } else if (grade == RuleConstant.DEGRADE_GRADE_EXCEPTION_COUNT) {
+            // 5.1 获取异常阈值 ＜ 阈值，不触发降级规则
             double exception = clusterNode.totalException();
             if (exception < count) {
                 return true;
             }
         }
-
+        // 执行到这里说明触发了熔断，将标识置为true
+        // 启动定时任务，在时间窗口过后，将cut置为true，将passCount置为0
         if (cut.compareAndSet(false, true)) {
             ResetTask resetTask = new ResetTask(this);
             pool.schedule(resetTask, timeWindow, TimeUnit.SECONDS);
