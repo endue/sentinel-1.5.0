@@ -104,6 +104,7 @@ final class FlowRuleChecker {
                                           boolean prioritized) {
         // 选择节点
         Node selectedNode = selectNodeByRequesterAndStrategy(rule, context, node);
+        // 注意这里，如果找不到Node就不限流了
         if (selectedNode == null) {
             return true;
         }
