@@ -187,6 +187,7 @@ final class FlowRuleChecker {
         // 以官网write_db和read_db为例，当read_db请求的时候，是把write_db的ClusterNode与规则进行比较，
         // 那么问题就有答案了，假设write_db一直没有请求，那么read_db就没有限制，因为write_db的ClusterNode数据为空
         if (strategy == RuleConstant.STRATEGY_RELATE) {
+            // ClusterBuilderSlot中clusterNodeMap全局共享
             return ClusterBuilderSlot.getClusterNode(refResource);
         }
 
