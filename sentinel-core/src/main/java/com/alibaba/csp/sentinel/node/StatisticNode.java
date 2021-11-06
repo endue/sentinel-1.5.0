@@ -298,16 +298,16 @@ public class StatisticNode implements Node {
         // IntervalProperty.INTERVAL / 1000是有多少个时间窗口
         // 最终计算出来的就是一个采样周期token的个数
         double maxCount = threshold * IntervalProperty.INTERVAL / 1000;
-        // 计算采用周期内已被占用的token个数
+        // 计算当前时间所在采样窗口以及未来采样窗口中被占用的token数，这个记录在LeapArray -> OccupiableBucketLeapArray -> borrowArray中
         long currentBorrow = rollingCounterInSecond.waiting();
-        // 超过阈值了，返回OccupyTimeout。因为此时已经无法占用下一个时间窗口了
+        // 超过阈值了，返回OccupyTimeout。没有token可以借了
         if (currentBorrow >= maxCount) {
             return OccupyTimeoutProperty.getOccupyTimeout();
         }
         // 计算时间窗口的长度
         int windowLength = IntervalProperty.INTERVAL / SampleCountProperty.SAMPLE_COUNT;
         /**
-         * 计算currentTime所在采用窗口的前一个采用窗口的开始时间
+         *
          *
          *  0                   500ms               1000ms
          *  +--------------------+--------------------→ 滑动窗口
@@ -326,7 +326,7 @@ public class StatisticNode implements Node {
          * 比如：刚开始调用后currentPass为23，突然大量请求过来rollingCounterInSecond.pass()再次调用已经是56了
          * 所以最终会导致更多的token被获取
          */
-        // 计算采用周期内已使用的token
+        // 计算采样周期内被占用的token 这个记录在LeapArray -> OccupiableBucketLeapArray中
         long currentPass = rollingCounterInSecond.pass();
         while (earliestTime < currentTime) {
             /**
@@ -346,7 +346,7 @@ public class StatisticNode implements Node {
             if (waitInMs >= OccupyTimeoutProperty.getOccupyTimeout()) {
                 break;
             }
-            // 计算currentTime所在时间窗口的前一个时间窗口已使用的token数
+            // 计算currentTime所在时间窗口的前一个时间窗口被占用的token数
             long windowPass = rollingCounterInSecond.getWindowPass(earliestTime);
             /**
              * 计算当前时间窗口是否还有token,如果有直接返回等待时间即可
@@ -364,10 +364,10 @@ public class StatisticNode implements Node {
              *                       ←---acquireCount----→
              *                       ←------------   剩余token       ----------→
              *  currentPass + currentBorrow + acquireCount - windowPass计算的就是剩余token
-             *  1. currentPass - windowPass计算当前时间窗口剩余token数
-             *  2. currentBorrow + acquireCount计算的是打算占用的token数
+             *  1. currentPass + currentBorrow计算当前时间窗口被占用的token数
+             *  2. acquireCount是本次要获取的token数
              *  3. maxCount就是当前时间窗口和未来某个时间窗口总的token数
-             *  4. 最终计算的就是当前时间窗口和未来某个时间窗口剩余的token数，有就返回等待时间。到达该时间后也就到达了未来的那个时间窗口
+             *  4. 最终计算的就是当前采样周期内剩余的token数
              */
             if (currentPass + currentBorrow + acquireCount - windowPass <= maxCount) {
                 return waitInMs;

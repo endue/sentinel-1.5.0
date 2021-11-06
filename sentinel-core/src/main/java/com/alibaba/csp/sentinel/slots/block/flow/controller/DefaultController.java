@@ -33,6 +33,9 @@ import com.alibaba.csp.sentinel.util.TimeUtil;
  */
 public class DefaultController implements TrafficShapingController {
 
+    /**
+     * 默认平均已使用的token数
+     */
     private static final int DEFAULT_AVG_USED_TOKENS = 0;
 
     /**

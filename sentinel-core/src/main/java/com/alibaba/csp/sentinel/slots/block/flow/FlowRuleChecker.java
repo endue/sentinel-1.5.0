@@ -143,7 +143,7 @@ final class FlowRuleChecker {
             }
             // 1.2 "流控模式"为"关联"或"链路"
             return selectReferenceNode(rule, context, node);
-        // 2. 当前流控规则针对来源为"default",也就是不区分调用来源
+        // 2. 当前流控规则针对来源为"default",也就是默认的流控规则
         } else if (RuleConstant.LIMIT_APP_DEFAULT.equals(limitApp)) {
             // 2.1 "流控模式"为直接,获取当前线程持有的当前资源A的ClusterNode,因为这种不区分调用来源，只针对当前资源A进行全局的流控
             if (strategy == RuleConstant.STRATEGY_DIRECT) {

@@ -43,7 +43,7 @@ public class OccupiableBucketLeapArray extends LeapArray<MetricBucket> {
     @Override
     public MetricBucket newEmptyBucket(long time) {
         MetricBucket newBucket = new MetricBucket();
-        // 如果曾经有借用过未来的滑动窗口，则将未来的滑动窗口上收集的数据copy到新创建的采集指标上，再返回
+        // 获取time对应的采用窗口被占用的token数
         MetricBucket borrowBucket = borrowArray.getWindowValue(time);
         if (borrowBucket != null) {
             newBucket.reset(borrowBucket);
@@ -56,7 +56,9 @@ public class OccupiableBucketLeapArray extends LeapArray<MetricBucket> {
     protected WindowWrap<MetricBucket> resetWindowTo(WindowWrap<MetricBucket> w, long time) {
         // Update the start time and reset value.
         w.resetTo(time);
+        // 获取time对应的采用窗口被占用的token数
         MetricBucket borrowBucket = borrowArray.getWindowValue(time);
+        // 存在那么添加到对应的采样窗口中
         if (borrowBucket != null) {
             w.value().reset();
             w.value().addPass((int)borrowBucket.pass());
