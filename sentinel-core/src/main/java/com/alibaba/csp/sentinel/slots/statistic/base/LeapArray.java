@@ -41,15 +41,15 @@ import com.alibaba.csp.sentinel.util.TimeUtil;
 public abstract class LeapArray<T> {
 
     /**
-     * 滑动时间窗口的长度，一个滑动时间窗口就是一个采样，单位：毫秒
+     * 采样窗口的长度，单位：毫秒
      */
     protected int windowLengthInMs;
     /**
-     * 时间窗口的个数，也就是需要采样几个时间窗口
+     * 采样窗口的个数，也就是需要几个时间窗口
      */
     protected int sampleCount;
     /**
-     * 采样的时间，单位：毫秒
+     * 采样周期的时间，单位：毫秒
      */
     protected int intervalInMs;
     /**
