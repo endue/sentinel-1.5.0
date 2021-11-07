@@ -79,11 +79,11 @@ public class DefaultController implements TrafficShapingController {
                 long currentTime;
                 long waitInMs;
                 currentTime = TimeUtil.currentTimeMillis();
-                // 尝试去占用下一个时间窗口的令牌，并返回该时间窗口所剩余的时间waitInMs
+                // 尝试去占用下一个槽的token，并返回举例下一个槽开始所剩余的时间waitInMs
                 waitInMs = node.tryOccupyNext(currentTime, acquireCount, count);
-                // 如果waitInMs小于抢占的最大超时时间，则在下一个时间窗口中增加对应令牌数，并将线程sleep
+                // 如果waitInMs小于抢占的最大超时时间，则在下一个槽中增加对应令牌数，并将线程sleep
                 if (waitInMs < OccupyTimeoutProperty.getOccupyTimeout()) {
-                    // 占用下一个时间窗口的token
+                    // 占用下一个槽的token
                     node.addWaitingRequest(currentTime + waitInMs, acquireCount);
                     node.addOccupiedPass(acquireCount);
                     sleep(waitInMs);

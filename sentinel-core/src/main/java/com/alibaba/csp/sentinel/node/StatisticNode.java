@@ -294,20 +294,19 @@ public class StatisticNode implements Node {
      */
     @Override
     public long tryOccupyNext(long currentTime, int acquireCount, double threshold) {
-        // threshold是一个时间窗口的token阈值
+        // threshold是槽的token阈值
         // IntervalProperty.INTERVAL / 1000是有多少个时间窗口
-        // 最终计算出来的就是一个采样周期token的个数
+        // 最终计算出来的就是一个滑动窗口token的个数
         double maxCount = threshold * IntervalProperty.INTERVAL / 1000;
-        // 计算到当前时间为止，已被占用的token数，这个记录在LeapArray -> OccupiableBucketLeapArray -> borrowArray中
+        // 计算到当前时间为止，等待token的请求数(默认计算的是下一个槽已被占用的token数)，这个记录在LeapArray -> OccupiableBucketLeapArray -> borrowArray中
         long currentBorrow = rollingCounterInSecond.waiting();
-        // 超过阈值了，返回OccupyTimeout。没有token可以借了
         if (currentBorrow >= maxCount) {
             return OccupyTimeoutProperty.getOccupyTimeout();
         }
-        // 计算采样窗口的长度
+        // 计算槽的时间长度
         int windowLength = IntervalProperty.INTERVAL / SampleCountProperty.SAMPLE_COUNT;
         /**
-         * 计算currentTime上一个采样窗口的开始时间
+         * 计算currentTime上一个槽的开始时间
          * 1636249684000                    1636249684500                    1636249685000                       1636249685500
          *          [1636249684000,1636249684500)     [1636249684500,1636249685000)     [1636249685000,1636249684501)
          *      +---------------------------------+---------------------------------+---------------------------------→ 滑动窗口
@@ -338,17 +337,18 @@ public class StatisticNode implements Node {
             if (waitInMs >= OccupyTimeoutProperty.getOccupyTimeout()) {
                 break;
             }
-            // 计算earliestTime所在时间窗口被使用的token数，这个记录在LeapArray -> OccupiableBucketLeapArray中
+            // 计算earliestTime所在槽已用token数，这个记录在LeapArray -> OccupiableBucketLeapArray中
             long windowPass = rollingCounterInSecond.getWindowPass(earliestTime);
+            // currentPass  - windowPass 计算参数currentTime所在槽剩余的token数 记住这里
             if (currentPass + currentBorrow + acquireCount - windowPass <= maxCount) {
                 return waitInMs;
             }
-            // 走到这里说明当前采样窗口没有剩余的token满足acquireCount，需要继续看后面的采样窗口是否满足条件
-            // 计算下一个采样窗口的开始时间
+            // 走到这里说明当前槽没有剩余的token满足acquireCount，需要继续看后面的槽是否满足条件
+            // 计算下一个槽的开始时间
             earliestTime += windowLength;
-            // 计算下一个采样窗口已使用的token
+            // 计算下一个槽已使用的token
             currentPass -= windowPass;
-            // +1操作计算下一个采样窗口
+            // +1操作计算下一个槽
             idx++;
         }
 
