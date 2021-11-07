@@ -26,13 +26,13 @@ public class WindowWrap<T> {
 
     /**
      * Time length of a single window bucket in milliseconds.
-     * 滑动时间窗口的长度，单位：毫秒
+     * 滑动窗口中单个槽的长度，单位：ms
      */
     private final long windowLengthInMs;
 
     /**
      * Start timestamp of the window in milliseconds.
-     * 滑动时间窗口的开始时间，单位：毫秒
+     * 滑动时间中当前槽的开始时间，单位：毫秒
      */
     private long windowStart;
 
