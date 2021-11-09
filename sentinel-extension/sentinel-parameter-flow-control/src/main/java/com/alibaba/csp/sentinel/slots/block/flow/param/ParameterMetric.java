@@ -39,16 +39,15 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
 public class ParameterMetric {
 
     /**
-     * 采样的个数，也就是滑动时间窗口的个数
+     * 滑动窗口中槽的个数，也就是需要几个采样窗口
      */
     private final int sampleCount;
     /**
-     * 采样的时间，单位：毫秒
+     * 滑动窗口的时间，单位：ms。 滑动窗口单个槽的长度 * 滑动窗口中槽的个数
      */
     private final int intervalMs;
 
     public ParameterMetric() {
-        // 默认采用时间1000ms，采用个数2.也就是每500ms是一个窗口，最多两个窗口
         this(SampleCountProperty.SAMPLE_COUNT, IntervalProperty.INTERVAL);
     }
 

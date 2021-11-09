@@ -114,6 +114,7 @@ final class ParamFlowChecker {
                 }
                 return false;
             }
+        // 线程数限流模式
         } else if (rule.getGrade() == RuleConstant.FLOW_GRADE_THREAD) {
             long threadCount = getHotParameters(resourceWrapper).getThreadCount(rule.getParamIdx(), value);
             if (exclusionItems.contains(value)) {

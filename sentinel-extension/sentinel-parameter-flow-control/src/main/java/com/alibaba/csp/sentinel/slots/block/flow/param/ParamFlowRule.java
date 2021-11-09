@@ -55,6 +55,7 @@ public class ParamFlowRule extends AbstractRule {
 
     /**
      * The threshold count.
+     * 热点参数阈值
      */
     private double count;
 

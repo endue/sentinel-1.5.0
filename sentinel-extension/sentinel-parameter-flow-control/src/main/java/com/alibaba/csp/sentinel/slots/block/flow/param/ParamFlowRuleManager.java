@@ -39,8 +39,16 @@ import com.alibaba.csp.sentinel.util.StringUtil;
  */
 public final class ParamFlowRuleManager {
 
+    /**
+     * 记录资源下的热点参数规则
+     * key是资源名称
+     * value是热点参数规则
+     */
     private static final Map<String, Set<ParamFlowRule>> paramFlowRules = new ConcurrentHashMap<>();
 
+    /**
+     * 热点参数规则更新监听器
+     */
     private final static RulePropertyListener PROPERTY_LISTENER = new RulePropertyListener();
     private static SentinelProperty<List<ParamFlowRule>> currentProperty = new DynamicSentinelProperty<>();
 

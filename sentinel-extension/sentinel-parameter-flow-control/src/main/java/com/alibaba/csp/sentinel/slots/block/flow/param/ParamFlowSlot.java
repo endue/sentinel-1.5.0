@@ -39,7 +39,7 @@ import com.alibaba.csp.sentinel.util.StringUtil;
 public class ParamFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     /**
-     * 资源与其对应多个Rule所需要的限流指标数据
+     * 资源和对应的参数统计
      */
     private static final Map<ResourceWrapper, ParameterMetric> metricsMap
         = new ConcurrentHashMap<ResourceWrapper, ParameterMetric>();
@@ -66,18 +66,25 @@ public class ParamFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
         fireExit(context, resourceWrapper, count, args);
     }
 
+    /**
+     * 热点参数校验
+     * @param resourceWrapper
+     * @param count
+     * @param args
+     * @throws BlockException
+     */
     void checkFlow(ResourceWrapper resourceWrapper, int count, Object... args)
         throws BlockException {
         // 首先校验要访问的资源是否有热点参数限流
         if (ParamFlowRuleManager.hasRules(resourceWrapper.getName())) {
-            // 获取资源对应的ParamFlowRule
+            // 获取资源对应的热点参数规则ParamFlowRule
             List<ParamFlowRule> rules = ParamFlowRuleManager.getRulesOfResource(resourceWrapper.getName());
             if (rules == null) {
                 return;
             }
             // 遍历所有ParamFlowRule
             for (ParamFlowRule rule : rules) {
-                // 获取规则中配置的参数下标
+                // 获取热点参数规则中配置的参数下标
                 int paramIdx = rule.getParamIdx();
                 // 参数是倒着填写的，重新计算参数位置
                 if (paramIdx < 0) {
@@ -93,7 +100,7 @@ public class ParamFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
                 // Initialize the parameter metrics.
                 // 初始化该资源下，该参数对应的令牌桶
                 initHotParamMetricsFor(resourceWrapper, rule.getParamIdx());
-                // 获取令牌
+                // 获取令牌，失败后将抛出ParamFlowException异常
                 if (!ParamFlowChecker.passCheck(resourceWrapper, rule, count, args)) {
 
                     // Here we add the block count.
