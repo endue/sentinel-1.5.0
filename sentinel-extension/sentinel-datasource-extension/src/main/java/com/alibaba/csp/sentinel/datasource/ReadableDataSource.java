@@ -19,7 +19,7 @@ import com.alibaba.csp.sentinel.property.SentinelProperty;
 
 /**
  * The readable data source is responsible for retrieving configs (read-only).
- *
+ * 读数据源
  * @param <S> source data type
  * @param <T> target data type
  * @author leyou
@@ -29,7 +29,7 @@ public interface ReadableDataSource<S, T> {
 
     /**
      * Load data data source as the target type.
-     *
+     * 将原始数据转换成目标数据
      * @return the target data.
      * @throws Exception IO or other error occurs
      */
@@ -37,7 +37,7 @@ public interface ReadableDataSource<S, T> {
 
     /**
      * Read original data from the data source.
-     *
+     * 从数据源中读取原始的数据
      * @return the original data.
      * @throws Exception IO or other error occurs
      */

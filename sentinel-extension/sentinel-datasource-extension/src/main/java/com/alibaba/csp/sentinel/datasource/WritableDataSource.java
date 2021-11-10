@@ -17,7 +17,7 @@ package com.alibaba.csp.sentinel.datasource;
 
 /**
  * Interface of writable data source support.
- *
+ * 写数据源
  * @author Eric Zhao
  * @since 0.2.0
  */
