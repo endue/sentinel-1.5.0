@@ -29,7 +29,7 @@ import com.alibaba.csp.sentinel.property.SentinelProperty;
 public abstract class AbstractDataSource<S, T> implements ReadableDataSource<S, T> {
 
     /**
-     * 转换器，负责转换数据
+     * 转换器，负责将原始数据转换成目标数据
      */
     protected final Converter<S, T> parser;
     /**
@@ -45,11 +45,22 @@ public abstract class AbstractDataSource<S, T> implements ReadableDataSource<S, 
         this.property = new DynamicSentinelProperty<T>();
     }
 
+    /**
+     * 将原始数据转换成目标数据
+     * @return
+     * @throws Exception
+     */
     @Override
     public T loadConfig() throws Exception {
         return loadConfig(readSource());
     }
 
+    /**
+     * 将原始数据转为目标数据
+     * @param conf
+     * @return
+     * @throws Exception
+     */
     public T loadConfig(S conf) throws Exception {
         T value = parser.convert(conf);
         return value;

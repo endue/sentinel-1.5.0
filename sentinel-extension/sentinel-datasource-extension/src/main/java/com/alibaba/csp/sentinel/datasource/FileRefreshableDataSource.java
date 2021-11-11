@@ -28,25 +28,46 @@ import com.alibaba.csp.sentinel.log.RecordLog;
  * A {@link ReadableDataSource} based on file. This class will automatically
  * fetches the backend file every isModified period.
  * </p>
+ * 基于文件的ReadableDataSource，定时刷新文件
  * <p>
  * Limitations: Default read buffer size is 1 MB. If file size is greater than
  * buffer size, exceeding bytes will be ignored. Default charset is UTF-8.
  * </p>
+ * 默认缓存区1M，超过的将被忽略，默认编码UTF-8
  *
  * @author Carpenter Lee
  * @author Eric Zhao
  */
 public class FileRefreshableDataSource<T> extends AutoRefreshDataSource<String, T> {
 
+    /**
+     * 缓存区最大值4M
+     */
     private static final int MAX_SIZE = 1024 * 1024 * 4;
+    /**
+     * 默认刷新dataSource时间
+     */
     private static final long DEFAULT_REFRESH_MS = 3000;
+    /**
+     * 默认缓存区大小1M
+     */
     private static final int DEFAULT_BUF_SIZE = 1024 * 1024;
+    /**
+     * 默认编码
+     */
     private static final Charset DEFAULT_CHAR_SET = Charset.forName("utf-8");
-
+    /**
+     * 缓存区
+     */
     private byte[] buf;
     private final Charset charset;
+    /**
+     * 配置文件，不是目录
+     */
     private final File file;
-
+    /**
+     * 文件最后的刷新时间
+     */
     private long lastModified = 0L;
 
     /**
@@ -74,6 +95,15 @@ public class FileRefreshableDataSource<T> extends AutoRefreshDataSource<String, 
         this(file, configParser, DEFAULT_REFRESH_MS, DEFAULT_BUF_SIZE, charset);
     }
 
+    /**
+     * 最终的构造方法，上面的都会调用这一个
+     * @param file
+     * @param configParser
+     * @param recommendRefreshMs
+     * @param bufSize
+     * @param charset
+     * @throws FileNotFoundException
+     */
     public FileRefreshableDataSource(File file, Converter<String, T> configParser, long recommendRefreshMs, int bufSize,
                                      Charset charset) throws FileNotFoundException {
         super(configParser, recommendRefreshMs);
@@ -91,6 +121,7 @@ public class FileRefreshableDataSource<T> extends AutoRefreshDataSource<String, 
         this.charset = charset;
         // If the file does not exist, the last modified will be 0.
         this.lastModified = file.lastModified();
+        // 构造完，立马加载文件
         firstLoad();
     }
 
@@ -113,10 +144,12 @@ public class FileRefreshableDataSource<T> extends AutoRefreshDataSource<String, 
         try {
             inputStream = new FileInputStream(file);
             FileChannel channel = inputStream.getChannel();
+            // 判断文件大小
             if (channel.size() > buf.length) {
                 throw new IllegalStateException(file.getAbsolutePath() + " file size=" + channel.size()
                     + ", is bigger than bufSize=" + buf.length + ". Can't read");
             }
+            // 简单粗暴读取buf大小
             int len = inputStream.read(buf);
             return new String(buf, 0, len, charset);
         } finally {
@@ -129,6 +162,10 @@ public class FileRefreshableDataSource<T> extends AutoRefreshDataSource<String, 
         }
     }
 
+    /**
+     * 判断配置文件是否发生更新
+     * @return
+     */
     @Override
     protected boolean isModified() {
         long curLastModified = file.lastModified();
