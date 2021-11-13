@@ -40,18 +40,30 @@ import com.alibaba.csp.sentinel.slots.block.RuleConstant;
  */
 final class ParamFlowChecker {
 
+    /**
+     * 校验热点参数是否通过
+     * @param resourceWrapper
+     * @param rule
+     * @param count
+     * @param args
+     * @return
+     */
     static boolean passCheck(ResourceWrapper resourceWrapper, /*@Valid*/ ParamFlowRule rule, /*@Valid*/ int count,
                              Object... args) {
+        // 1. 无参数，直接请求通过
         if (args == null) {
             return true;
         }
 
+        // 2. 获取规则中配置的热点参数下标
         int paramIdx = rule.getParamIdx();
         if (args.length <= paramIdx) {
             return true;
         }
 
         // Get parameter value. If value is null, then pass.
+        // 3. 获取访问资源时，对应参数下标位置的值，
+        // 如：SphU.entry(resourceName, EntryType.IN, 1, args)
         Object value = args[paramIdx];
         if (value == null) {
             return true;
@@ -60,7 +72,7 @@ final class ParamFlowChecker {
         if (rule.isClusterMode() && rule.getGrade() == RuleConstant.FLOW_GRADE_QPS) {
             return passClusterCheck(resourceWrapper, rule, count, value);
         }
-
+        // 本地模式
         return passLocalCheck(resourceWrapper, rule, count, value);
     }
 
@@ -69,7 +81,7 @@ final class ParamFlowChecker {
         try {
             // 参数是集合类型
             if (Collection.class.isAssignableFrom(value.getClass())) {
-                // 遍历集合拿参数
+                // 遍历集合，获取参数值，一个个校验，有一个不通过则就不通过
                 for (Object param : ((Collection)value)) {
                     if (!passSingleValueCheck(resourceWrapper, rule, count, param)) {
                         return false;
@@ -77,7 +89,7 @@ final class ParamFlowChecker {
                 }
             // 参是数组类型
             } else if (value.getClass().isArray()) {
-                // 遍历数组拿参数
+                // 遍历数组，获取参数值，一个个校验，有一个不通过则就不通过
                 int length = Array.getLength(value);
                 for (int i = 0; i < length; i++) {
                     Object param = Array.get(value, i);
@@ -96,25 +108,36 @@ final class ParamFlowChecker {
         return true;
     }
 
+    /**
+     * 校验参数值
+     * @param resourceWrapper
+     * @param rule
+     * @param count
+     * @param value
+     * @return
+     */
     static boolean passSingleValueCheck(ResourceWrapper resourceWrapper, ParamFlowRule rule, int count, Object value) {
+        // 获取参数排除项
         Set<Object> exclusionItems = rule.getParsedHotItems().keySet();
         // QPS限流模式
         if (rule.getGrade() == RuleConstant.FLOW_GRADE_QPS) {
-            // 首先获取资源下统计热点参数统计指标的对象
-            // 根据上一步的对象获取某参数索引下标下具体某个参数值的统计数据
+            // getHotParameters(resourceWrapper) 获取资源下的参数指标
+            // getPassParamQps(rule.getParamIdx(), value) 获取参数指标中针对某下标索引的某个值的统计
             double curCount = getHotParameters(resourceWrapper).getPassParamQps(rule.getParamIdx(), value);
-
+            // 当前value值被包含在参数排除项中，则根据配置的参数排除项的阈值来校验本次请求是否通过
             if (exclusionItems.contains(value)) {
                 // Pass check for exclusion items.
                 int itemQps = rule.getParsedHotItems().get(value);
                 return curCount + count <= itemQps;
+            // 不在参数排除项中，则根据热点参数规则限流
             } else if (curCount + count > rule.getCount()) {
+                // todo 这里什么意思？
                 if ((curCount - rule.getCount()) < 1 && (curCount - rule.getCount()) > 0) {
                     return true;
                 }
                 return false;
             }
-        // 线程数限流模式
+        // 线程数限流模式和上面差不多，只不过获取的是线程统计
         } else if (rule.getGrade() == RuleConstant.FLOW_GRADE_THREAD) {
             long threadCount = getHotParameters(resourceWrapper).getThreadCount(rule.getParamIdx(), value);
             if (exclusionItems.contains(value)) {
@@ -129,7 +152,7 @@ final class ParamFlowChecker {
     }
 
     /**
-     * 获取资源下所有热点参数统计指标
+     * 获取资源下的参数指标
      * @param resourceWrapper
      * @return
      */

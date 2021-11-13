@@ -39,7 +39,7 @@ import com.alibaba.csp.sentinel.util.StringUtil;
 public class ParamFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     /**
-     * 资源和对应的参数统计
+     * 资源和对应的参数指标
      */
     private static final Map<ResourceWrapper, ParameterMetric> metricsMap
         = new ConcurrentHashMap<ResourceWrapper, ParameterMetric>();
@@ -68,16 +68,16 @@ public class ParamFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
 
     /**
      * 热点参数校验
-     * @param resourceWrapper
-     * @param count
-     * @param args
+     * @param resourceWrapper 被访问资源
+     * @param count 获取token数量
+     * @param args  参数列表
      * @throws BlockException
      */
     void checkFlow(ResourceWrapper resourceWrapper, int count, Object... args)
         throws BlockException {
-        // 首先校验要访问的资源是否有热点参数限流
+        // 首先校验要访问的资源是否有热点参数限流规则
         if (ParamFlowRuleManager.hasRules(resourceWrapper.getName())) {
-            // 获取资源对应的热点参数规则ParamFlowRule
+            // 获取资源对应的热点参数限流规则ParamFlowRule
             List<ParamFlowRule> rules = ParamFlowRuleManager.getRulesOfResource(resourceWrapper.getName());
             if (rules == null) {
                 return;
@@ -98,12 +98,13 @@ public class ParamFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
                 }
 
                 // Initialize the parameter metrics.
-                // 初始化该资源下，该参数对应的令牌桶
+                // 初始化该资源下，该参数下标对应的令牌桶
                 initHotParamMetricsFor(resourceWrapper, rule.getParamIdx());
                 // 获取令牌，失败后将抛出ParamFlowException异常
                 if (!ParamFlowChecker.passCheck(resourceWrapper, rule, count, args)) {
 
                     // Here we add the block count.
+                    // 请求被限流，递增REQUEST_BLOCKED类型请求
                     addBlockCount(resourceWrapper, count, args);
 
                     String triggeredParam = "";
@@ -128,7 +129,7 @@ public class ParamFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
     /**
      * Init the parameter metric and index map for given resource.
      * Package-private for test.
-     *
+     * 初始化指定资源下参数对应的滑动窗口和线程统计
      * @param resourceWrapper resource to init 被访问的资源
      * @param index           index to initialize, which must be valid 参数下标位置
      */
@@ -148,7 +149,7 @@ public class ParamFlowSlot extends AbstractLinkedProcessorSlot<DefaultNode> {
     }
 
     /**
-     * 获取资源下所有热点参数统计指标
+     * 获取资源下配置的参数指标
      * @param resourceWrapper
      * @return
      */

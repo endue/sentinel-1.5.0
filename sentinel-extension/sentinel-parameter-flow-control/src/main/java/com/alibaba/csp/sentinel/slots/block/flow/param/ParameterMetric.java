@@ -60,7 +60,7 @@ public class ParameterMetric {
     }
 
     /**
-     * 热点参数QPS滑动窗口指标,key是参数索引下标，value是统计信息
+     * 热点参数QPS与其对应的滑动窗口,key是参数索引下标，value是滑动窗口
      */
     private Map<Integer, HotParameterLeapArray> rollingParameters =
         new ConcurrentHashMap<Integer, HotParameterLeapArray>();
@@ -83,6 +83,10 @@ public class ParameterMetric {
         threadCountMap.clear();
     }
 
+    /**
+     * 初始化指定下标位置参数的滑动窗口和线程统计
+     * @param index
+     */
     public void initializeForIndex(int index) {
         if (!rollingParameters.containsKey(index)) {
             synchronized (this) {
@@ -99,6 +103,10 @@ public class ParameterMetric {
         }
     }
 
+    /**
+     * 每次在entry.exit()后，需要将参数对应的线程统计数递减
+     * @param args
+     */
     @SuppressWarnings("rawtypes")
     public void decreaseThreadCount(Object... args) {
         if (args == null) {
@@ -268,12 +276,12 @@ public class ParameterMetric {
      */
     public double getPassParamQps(int index, Object value) {
         try {
-            // 获取该索引下标下对应参数的统计信息
+            // 获取该索引下标下对应参数的滑动窗口
             HotParameterLeapArray parameter = rollingParameters.get(index);
             if (parameter == null || value == null) {
                 return -1;
             }
-            // 这一步就是获取对应参数值的统计信息了，因为不同参数值会对应不同的指标
+            // 这一步就是获取对应参数value值的统计信息了，因为不同参数值会对应不同的指标
             return parameter.getRollingAvg(RollingParamEvent.REQUEST_PASSED, value);
         } catch (Throwable e) {
             RecordLog.info(e.getMessage(), e);

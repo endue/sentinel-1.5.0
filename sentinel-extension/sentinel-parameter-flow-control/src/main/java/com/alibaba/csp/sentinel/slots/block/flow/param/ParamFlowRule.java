@@ -27,7 +27,7 @@ import com.alibaba.csp.sentinel.slots.block.RuleConstant;
 
 /**
  * Rules for "hot-spot" frequent parameter flow control.
- *
+ * 热点资源规则
  * @author jialiang.linjl
  * @author Eric Zhao
  * @since 0.2.0
@@ -61,12 +61,12 @@ public class ParamFlowRule extends AbstractRule {
 
     /**
      * Original exclusion items of parameters.
-     * 参数例外项，可以针对指定的参数值单独设置限流阈值，不受前面 count 阈值的限制。仅支持基本类型和字符串类型
+     * 参数例外项，可以针对指定的参数值单独设置限流阈值，不受前面count阈值的限制。仅支持基本类型和字符串类型
      * 如下：
      * ParamFlowRule rule = new ParamFlowRule(resourceName)
      *     .setParamIdx(0)
      *     .setCount(5);
-     * // 针对 int 类型的参数 PARAM_B，单独设置限流 QPS 阈值为 10，而不是全局的阈值 5.
+     * // 针对int类型的参数2，单独设置限流QPS阈值为10，而不是全局的阈值5.
      * ParamFlowItem item = new ParamFlowItem().setObject(String.valueOf(PARAM_B))
      *     .setClassType(int.class.getName())
      *     .setCount(10);
@@ -78,6 +78,13 @@ public class ParamFlowRule extends AbstractRule {
 
     /**
      * Parsed exclusion items of parameters. Only for internal use.
+     * 参数排除项，仅供内部使用。
+     * key是参数值，value是配置的token阈值
+     * 参考用处：{@link ParamFlowChecker#passSingleValueCheck}
+     * Map<Object, Integer> map = new HashMap<Object, Integer>();
+     * map.put("value1", 3);
+     * map.put("value2", 5);
+     * rule.setParsedHotItems(map);
      */
     private Map<Object, Integer> hotItems = new HashMap<Object, Integer>();
 

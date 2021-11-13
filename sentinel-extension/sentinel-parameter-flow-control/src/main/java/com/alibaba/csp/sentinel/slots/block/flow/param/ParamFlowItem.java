@@ -17,7 +17,7 @@ package com.alibaba.csp.sentinel.slots.block.flow.param;
 
 /**
  * A flow control item for a specific parameter value.
- *
+ * 针对特定参数值的流控制项
  * @author jialiang.linjl
  * @author Eric Zhao
  * @since 0.2.0

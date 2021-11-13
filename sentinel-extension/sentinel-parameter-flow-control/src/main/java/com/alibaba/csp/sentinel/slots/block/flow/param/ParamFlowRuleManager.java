@@ -32,7 +32,7 @@ import com.alibaba.csp.sentinel.util.StringUtil;
 
 /**
  * Manager for frequent ("hot-spot") parameter flow rules.
- *
+ * 资源与其对应的热点参数规则管理器
  * @author jialiang.linjl
  * @author Eric Zhao
  * @since 0.2.0
