@@ -24,8 +24,18 @@ package com.alibaba.csp.sentinel.slots.block.flow.param;
  */
 public class ParamFlowItem {
 
+    /**
+     * 参数例外项的值
+     */
     private String object;
+    /**
+     * 参数例外项的阈值
+     */
     private Integer count;
+    /**
+     * 参数例外项的类型
+     * 目前只支持基本数据类型
+     */
     private String classType;
 
     public ParamFlowItem() {}

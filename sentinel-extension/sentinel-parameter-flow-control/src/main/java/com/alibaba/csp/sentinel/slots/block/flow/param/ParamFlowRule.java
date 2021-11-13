@@ -94,6 +94,7 @@ public class ParamFlowRule extends AbstractRule {
     private boolean clusterMode = false;
     /**
      * Cluster mode specific config for parameter flow rule.
+     * 集群模式配置
      */
     private ParamFlowClusterConfig clusterConfig;
 
