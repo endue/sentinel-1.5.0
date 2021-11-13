@@ -81,10 +81,8 @@ public class ParamFlowRule extends AbstractRule {
      * 参数排除项，仅供内部使用。
      * key是参数值，value是配置的token阈值
      * 参考用处：{@link ParamFlowChecker#passSingleValueCheck}
-     * Map<Object, Integer> map = new HashMap<Object, Integer>();
-     * map.put("value1", 3);
-     * map.put("value2", 5);
-     * rule.setParsedHotItems(map);
+     * 该属性其实就是当初始化ParamFlowRule到ParamFlowRuleManager时，解析的paramFlowItemList，
+     * 具体可参考ParamFlowRuleManager中的RulePropertyListener处理配置变更的操作流程
      */
     private Map<Object, Integer> hotItems = new HashMap<Object, Integer>();
 

@@ -66,6 +66,7 @@ public class ParameterMetric {
         new ConcurrentHashMap<Integer, HotParameterLeapArray>();
     /**
      * 热点参数线程数指标,key是参数索引下标，value是统计信息
+     *  value又是一个Map,key是参数具体值，value是线程统计
      */
     private Map<Integer, CacheMap<Object, AtomicInteger>> threadCountMap =
         new ConcurrentHashMap<Integer, CacheMap<Object, AtomicInteger>>();

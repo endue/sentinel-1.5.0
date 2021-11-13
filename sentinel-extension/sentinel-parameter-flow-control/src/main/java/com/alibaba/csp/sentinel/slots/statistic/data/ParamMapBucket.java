@@ -32,6 +32,7 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
 public class ParamMapBucket {
 
     /**
+     * data是一个数组，用来区分不同请求类型下的统计
      * key是参数具体的值，vaue是计数
      */
     private final CacheMap<Object, AtomicInteger>[] data;
