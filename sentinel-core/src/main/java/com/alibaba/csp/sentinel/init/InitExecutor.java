@@ -42,6 +42,7 @@ public final class InitExecutor {
             return;
         }
         try {
+            // 基于javaSPI加载META-INF/services目录下配置的InitFunc实现类
             ServiceLoader<InitFunc> loader = ServiceLoader.load(InitFunc.class);
             List<OrderWrapper> initList = new ArrayList<OrderWrapper>();
             for (InitFunc initFunc : loader) {

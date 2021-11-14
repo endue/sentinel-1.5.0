@@ -62,9 +62,19 @@ public class ParamMapBucket {
         return counter == null ? 0 : counter.intValue();
     }
 
+    /**
+     * 增加对应请求类型的数量
+     * @param event
+     * @param count
+     * @param value
+     * @return
+     */
     public ParamMapBucket add(RollingParamEvent event, int count, Object value) {
+        // data[event.ordinal()] 获取对应请求类型的CacheMap<Object, AtomicInteger>
+        // 然后从CacheMap中获取具体值的统计AtomicInteger
         AtomicInteger counter = data[event.ordinal()].get(value);
         // Note: not strictly concise.
+        // 没有就新建在增加，有就直接增加
         if (counter == null) {
             AtomicInteger old = data[event.ordinal()].putIfAbsent(value, new AtomicInteger(count));
             if (old != null) {

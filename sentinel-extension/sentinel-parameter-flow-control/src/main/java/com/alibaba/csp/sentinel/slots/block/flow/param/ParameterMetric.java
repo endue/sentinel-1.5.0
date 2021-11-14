@@ -93,10 +93,12 @@ public class ParameterMetric {
             synchronized (this) {
                 // putIfAbsent
                 if (rollingParameters.get(index) == null) {
+                    // 初始化参数索引对应的滑动窗口
                     rollingParameters.put(index, new HotParameterLeapArray(sampleCount, intervalMs));
                 }
 
                 if (threadCountMap.get(index) == null) {
+                    // 初始化参数索引对应的参数值的线程统计集合
                     threadCountMap.put(index,
                         new ConcurrentLinkedHashMapWrapper<Object, AtomicInteger>(THREAD_COUNT_MAX_CAPACITY));
                 }
@@ -105,7 +107,7 @@ public class ParameterMetric {
     }
 
     /**
-     * 每次在entry.exit()后，需要将参数对应的线程统计数递减
+     * 每次在entry.exit()后，需要将具体参数值对应的线程统计数递减
      * @param args
      */
     @SuppressWarnings("rawtypes")
