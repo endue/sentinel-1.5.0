@@ -86,6 +86,7 @@ public class RateLimiterController implements TrafficShapingController {
         long currentTime = TimeUtil.currentTimeMillis();
         // Calculate the interval between every two requests.
         // 计算此次令牌颁发所需要的时间，其中:(1.0 / count * 1000)代表每个令牌生成的耗时，然后乘以acquireCount得到此次所需令牌生成耗时
+        // 匀速限流阀值(count)<=1000才有意义 ，如果count>1000&count<2000,则限流效果和1000是一样的。如果count>2000，则限流间隔costTime=0,实际上就是不限流
         long costTime = Math.round(1.0 * (acquireCount) / count * 1000);
 
         // Expected pass time of this request.
