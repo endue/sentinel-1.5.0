@@ -43,7 +43,7 @@ import com.alibaba.csp.sentinel.util.function.Predicate;
 
 /**
  * Manager for cluster flow rules.
- *
+ * 集群流控规则管理器
  * @author Eric Zhao
  * @since 1.4.0
  */

@@ -57,9 +57,10 @@ final class FlowRuleChecker {
         }
         // 获取控制台页面上的"是否集群"的值,默认未勾选
         if (rule.isClusterMode()) {
+            // 集群流控
             return passClusterCheck(rule, context, node, acquireCount, prioritized);
         }
-        // 本地模式流控实现
+        // 使用单机流控
         return passLocalCheck(rule, context, node, acquireCount, prioritized);
     }
 

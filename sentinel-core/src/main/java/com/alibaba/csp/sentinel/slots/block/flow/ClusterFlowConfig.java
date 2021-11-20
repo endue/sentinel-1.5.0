@@ -28,6 +28,8 @@ public class ClusterFlowConfig {
 
     /**
      * Global unique ID.
+     * 全局唯一ID
+     * 参考{@link com.alibaba.csp.sentinel.dashboard.repository.rule.InMemoryRuleRepositoryAdapter#save}
      */
     private Long flowId;
 
@@ -38,6 +40,7 @@ public class ClusterFlowConfig {
     private int thresholdType = ClusterRuleConstant.FLOW_THRESHOLD_AVG_LOCAL;
     /**
      * 流控规则配置页面的"是否集群"被选中时，"失败退化"的配置
+     * 用来确定当client连接失败或通信失败时，是否退化到本地的限流模式的
      */
     private boolean fallbackToLocalWhenFail = true;
 

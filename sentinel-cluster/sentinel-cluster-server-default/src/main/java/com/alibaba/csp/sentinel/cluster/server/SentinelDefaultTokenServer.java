@@ -36,6 +36,9 @@ import com.alibaba.csp.sentinel.util.StringUtil;
  */
 public class SentinelDefaultTokenServer implements ClusterTokenServer {
 
+    /**
+     * 标识当前集群限流服务端是否嵌入模式
+     */
     private final boolean embedded;
 
     private ClusterTokenServer server;

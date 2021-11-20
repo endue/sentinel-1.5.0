@@ -140,11 +140,11 @@ public class WarmUpController implements TrafficShapingController {
 
     @Override
     public boolean canPass(Node node, int acquireCount, boolean prioritized) {
-        // 获取当前QPS
+        // 获取滑动窗口当前槽中已通过QPS
         long passQps = (long) node.passQps();
-        // 获取上一时间窗口的QPS
+        // 获取滑动窗口上一个槽已通过QPS
         long previousQps = (long) node.previousPassQps();
-        //
+
         syncToken(previousQps);
 
         // 开始计算它的斜率
@@ -152,8 +152,7 @@ public class WarmUpController implements TrafficShapingController {
         long restToken = storedTokens.get();
         if (restToken >= warningToken) {
             long aboveToken = restToken - warningToken;
-            // 消耗的速度要比warning快，但是要比慢
-            // current interval = restToken*slope+1/count
+
             double warningQps = Math.nextUp(1.0 / (aboveToken * slope + 1.0 / count));
             if (passQps + acquireCount <= warningQps) {
                 return true;
