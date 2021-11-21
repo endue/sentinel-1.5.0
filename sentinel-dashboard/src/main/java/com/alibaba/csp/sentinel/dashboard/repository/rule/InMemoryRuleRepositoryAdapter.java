@@ -30,21 +30,33 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
 public abstract class InMemoryRuleRepositoryAdapter<T extends RuleEntity> implements RuleRepository<T, Long> {
 
     /**
+     * 记录客户端信息和对应配置的所有规则
      * {@code <machine, <id, rule>>}
+     * key是客户端信息，value是个map(key是规则ID，value是规则)
      */
     private Map<MachineInfo, Map<Long, T>> machineRules = new ConcurrentHashMap<>(16);
+    /**
+     * 记录所有的规则
+     * key是规则ID，value是规则
+     */
     private Map<Long, T> allRules = new ConcurrentHashMap<>(16);
-
+    /**
+     * key是应用的名称，项目中可以通过project.name指定。若未指定，则默认解析main函数的类名作为应用名。实际项目使用中建议手动指定应用名。
+     * value是个map(key是规则ID，value是规则)
+     */
     private Map<String, Map<Long, T>> appRules = new ConcurrentHashMap<>(16);
 
     private static final int MAX_RULES_SIZE = 10000;
 
     @Override
     public T save(T entity) {
+        // id为null则设置id
         if (entity.getId() == null) {
             entity.setId(nextId());
         }
+        // 调用前置处理器，处理参数entity
         T processedEntity = preProcess(entity);
+        // 将处理后的参数entity存储到内存
         if (processedEntity != null) {
             allRules.put(processedEntity.getId(), processedEntity);
             machineRules.computeIfAbsent(MachineInfo.of(processedEntity.getApp(), processedEntity.getIp(),

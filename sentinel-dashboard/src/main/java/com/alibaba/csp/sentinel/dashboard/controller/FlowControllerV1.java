@@ -139,13 +139,15 @@ public class FlowControllerV1 {
 
     @PostMapping("/rule")
     public Result<FlowRuleEntity> apiAddFlowRule(HttpServletRequest request, @RequestBody FlowRuleEntity entity) {
+        // 权限校验
         AuthUser authUser = authService.getAuthUser(request);
         authUser.authTarget(entity.getApp(), PrivilegeType.WRITE_RULE);
-
+        // entity校验
         Result<FlowRuleEntity> checkResult = checkEntityInternal(entity);
         if (checkResult != null) {
             return checkResult;
         }
+        // 保存
         entity.setId(null);
         Date date = new Date();
         entity.setGmtCreate(date);
