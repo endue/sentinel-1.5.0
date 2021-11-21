@@ -52,6 +52,9 @@ public class SimpleHttpCommandCenter implements CommandCenter {
     private static final int DEFAULT_SERVER_SO_TIMEOUT = 3000;
     private static final int DEFAULT_PORT = 8719;
 
+    /**
+     * key是CommandHandler中CommandMapping注解中name的值
+     */
     @SuppressWarnings("rawtypes")
     private static final Map<String, CommandHandler> handlerMap = new ConcurrentHashMap<String, CommandHandler>();
 
@@ -97,6 +100,8 @@ public class SimpleHttpCommandCenter implements CommandCenter {
             @Override
             public void run() {
                 boolean success = false;
+                // 基于客户端监控API的端口，建立一个ServerSocket
+                // 控制台会通过该端口向客户端发送规则
                 ServerSocket serverSocket = getServerSocketFromBasePort(port);
 
                 if (serverSocket != null) {

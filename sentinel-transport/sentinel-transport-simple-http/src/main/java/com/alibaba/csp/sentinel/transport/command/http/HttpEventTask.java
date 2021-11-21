@@ -64,6 +64,7 @@ public class HttpEventTask implements Runnable {
         BufferedReader in = null;
         PrintWriter printWriter = null;
         try {
+            // 获取请求中的内容
             long start = System.currentTimeMillis();
             in = new BufferedReader(new InputStreamReader(socket.getInputStream(), SentinelConfig.charset()));
             OutputStream outputStream = socket.getOutputStream();
@@ -74,8 +75,10 @@ public class HttpEventTask implements Runnable {
             String line = in.readLine();
             CommandCenterLog.info("[SimpleHttpCommandCenter] socket income: " + line
                 + "," + socket.getInetAddress());
+            // 将请求中内容转换为CommandRequest对象
             CommandRequest request = parseRequest(line);
 
+            // 获取请求对应的处理commandHandler的名字
             // Validate the target command.
             String commandName = HttpCommandUtils.getTarget(request);
             if (StringUtil.isBlank(commandName)) {
@@ -83,15 +86,18 @@ public class HttpEventTask implements Runnable {
                 return;
             }
 
+            // 基于请求对应的commandHandler的名字获取对应的commandHandler
             // Find the matching command handler.
             CommandHandler<?> commandHandler = SimpleHttpCommandCenter.getHandler(commandName);
             if (commandHandler != null) {
+                // 处理请求
                 CommandResponse<?> response = commandHandler.handle(request);
                 handleResponse(response, printWriter, outputStream);
             } else {
                 // No matching command handler.
                 badRequest(printWriter, "Unknown command `" + commandName + '`');
             }
+            // 返回响应
             printWriter.flush();
 
             long cost = System.currentTimeMillis() - start;

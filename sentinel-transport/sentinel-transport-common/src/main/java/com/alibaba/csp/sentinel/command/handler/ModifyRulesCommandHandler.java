@@ -46,8 +46,10 @@ public class ModifyRulesCommandHandler implements CommandHandler<String> {
 
     @Override
     public CommandResponse<String> handle(CommandRequest request) {
+        // 获取请求类型
         String type = request.getParam("type");
         // rule data in get parameter
+        // 获取规则序列化后的字符串
         String data = request.getParam("data");
         if (StringUtil.isNotEmpty(data)) {
             try {
@@ -61,7 +63,7 @@ public class ModifyRulesCommandHandler implements CommandHandler<String> {
         RecordLog.info(String.format("Receiving rule change (type: %s): %s", type, data));
 
         String result = "success";
-
+        // 根据规则类型，将序列化后的规则字符串转为实体对象，然后保存
         if (FLOW_RULE_TYPE.equalsIgnoreCase(type)) {
             List<FlowRule> flowRules = JSONArray.parseArray(data, FlowRule.class);
             FlowRuleManager.loadRules(flowRules);

@@ -386,6 +386,7 @@ public class SentinelApiClient {
             logger.info("encode rule error", e);
             return false;
         }
+        // http://id:port/setRules?type=flow&data=xxx
         String url = "http://" + ip + ":" + port + "/" + SET_RULES_PATH + "?type=" + FLOW_RULE_TYPE + "&data=" + data;
         String result = httpGetContent(url);
         logger.info("setFlowRule: " + result);
