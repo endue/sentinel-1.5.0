@@ -66,6 +66,7 @@ public class ModifyRulesCommandHandler implements CommandHandler<String> {
         // 根据规则类型，将序列化后的规则字符串转为实体对象，然后保存
         if (FLOW_RULE_TYPE.equalsIgnoreCase(type)) {
             List<FlowRule> flowRules = JSONArray.parseArray(data, FlowRule.class);
+            // 推送给规则管理器，规则管理器内部调用DynamicSentinelProperty.updateValue(),然后出发listener.configUpdate()方法，将管理器中的规则进行更新
             FlowRuleManager.loadRules(flowRules);
             if (!writeToDataSource(getFlowDataSource(), flowRules)) {
                 result = WRITE_DS_FAILURE_MSG;
@@ -73,6 +74,7 @@ public class ModifyRulesCommandHandler implements CommandHandler<String> {
             return CommandResponse.ofSuccess(result);
         } else if (AUTHORITY_RULE_TYPE.equalsIgnoreCase(type)) {
             List<AuthorityRule> rules = JSONArray.parseArray(data, AuthorityRule.class);
+            // 推送给规则管理器，规则管理器内部调用DynamicSentinelProperty.updateValue(),然后出发listener.configUpdate()方法，将管理器中的规则进行更新
             AuthorityRuleManager.loadRules(rules);
             if (!writeToDataSource(getAuthorityDataSource(), rules)) {
                 result = WRITE_DS_FAILURE_MSG;
@@ -80,6 +82,7 @@ public class ModifyRulesCommandHandler implements CommandHandler<String> {
             return CommandResponse.ofSuccess(result);
         } else if (DEGRADE_RULE_TYPE.equalsIgnoreCase(type)) {
             List<DegradeRule> rules = JSONArray.parseArray(data, DegradeRule.class);
+            // 推送给规则管理器，规则管理器内部调用DynamicSentinelProperty.updateValue(),然后出发listener.configUpdate()方法，将管理器中的规则进行更新
             DegradeRuleManager.loadRules(rules);
             if (!writeToDataSource(getDegradeDataSource(), rules)) {
                 result = WRITE_DS_FAILURE_MSG;
@@ -87,6 +90,7 @@ public class ModifyRulesCommandHandler implements CommandHandler<String> {
             return CommandResponse.ofSuccess(result);
         } else if (SYSTEM_RULE_TYPE.equalsIgnoreCase(type)) {
             List<SystemRule> rules = JSONArray.parseArray(data, SystemRule.class);
+            // 推送给规则管理器，规则管理器内部调用DynamicSentinelProperty.updateValue(),然后出发listener.configUpdate()方法，将管理器中的规则进行更新
             SystemRuleManager.loadRules(rules);
             if (!writeToDataSource(getSystemSource(), rules)) {
                 result = WRITE_DS_FAILURE_MSG;
