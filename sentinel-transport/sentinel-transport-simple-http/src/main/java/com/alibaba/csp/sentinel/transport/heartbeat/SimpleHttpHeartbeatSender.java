@@ -39,6 +39,9 @@ public class SimpleHttpHeartbeatSender implements HeartbeatSender {
     private static final String HEARTBEAT_PATH = "/registry/machine";
     private static final int OK_STATUS = 200;
 
+    /**
+     * 心跳间隔
+     */
     private static final long DEFAULT_INTERVAL = 1000 * 10;
 
     private final HeartbeatMessage heartBeat = new HeartbeatMessage();
@@ -55,6 +58,11 @@ public class SimpleHttpHeartbeatSender implements HeartbeatSender {
         this.addressList = newAddrs;
     }
 
+    /**
+     * 发送心跳入口
+     * @return
+     * @throws Exception
+     */
     @Override
     public boolean sendHeartbeat() throws Exception {
         if (TransportConfig.getRuntimePort() <= 0) {

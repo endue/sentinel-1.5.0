@@ -35,6 +35,9 @@ import com.alibaba.csp.sentinel.transport.config.TransportConfig;
  */
 public class HeartbeatSenderInitFunc implements InitFunc {
 
+    /**
+     * 心跳任务线程池
+     */
     private static ScheduledExecutorService pool = Executors.newScheduledThreadPool(2,
         new NamedThreadFactory("sentinel-heartbeat-send-task", true));
 
@@ -42,8 +45,12 @@ public class HeartbeatSenderInitFunc implements InitFunc {
         return interval != null && interval > 0;
     }
 
+    /**
+     * 心跳SPI入口
+     */
     @Override
     public void init() {
+        // 获取心跳服务遍历
         ServiceLoader<HeartbeatSender> loader = ServiceLoader.load(HeartbeatSender.class);
         Iterator<HeartbeatSender> iterator = loader.iterator();
         if (iterator.hasNext()) {
@@ -51,8 +58,10 @@ public class HeartbeatSenderInitFunc implements InitFunc {
             if (iterator.hasNext()) {
                 throw new IllegalStateException("Only single heartbeat sender can be scheduled");
             } else {
+                // 解析心跳间隔
                 long interval = retrieveInterval(sender);
                 setIntervalIfNotExists(interval);
+                // 根据心跳启动对应的心跳任务
                 scheduleHeartbeatTask(sender, interval);
             }
         }
@@ -62,6 +71,11 @@ public class HeartbeatSenderInitFunc implements InitFunc {
         SentinelConfig.setConfig(TransportConfig.HEARTBEAT_INTERVAL_MS, String.valueOf(interval));
     }
 
+    /**
+     * 心跳间隔
+     * @param sender
+     * @return
+     */
     long retrieveInterval(/*@NonNull*/ HeartbeatSender sender) {
         Long intervalInConfig = TransportConfig.getHeartbeatIntervalMs();
         if (validHeartbeatInterval(intervalInConfig)) {
@@ -75,6 +89,11 @@ public class HeartbeatSenderInitFunc implements InitFunc {
         }
     }
 
+    /**
+     * 启动心跳任务
+     * @param sender
+     * @param interval
+     */
     private void scheduleHeartbeatTask(/*@NonNull*/ final HeartbeatSender sender, /*@Valid*/ long interval) {
         pool.scheduleAtFixedRate(new Runnable() {
             @Override

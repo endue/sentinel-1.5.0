@@ -38,6 +38,16 @@ public class MachineRegistryController {
     @Autowired
     private AppManagement appManagement;
 
+    /**
+     * 客户端心跳入口
+     * @param app
+     * @param version
+     * @param v
+     * @param hostname
+     * @param ip
+     * @param port
+     * @return
+     */
     @ResponseBody
     @RequestMapping("/machine")
     public Result<?> receiveHeartBeat(String app, Long version, String v, String hostname, String ip, Integer port) {
