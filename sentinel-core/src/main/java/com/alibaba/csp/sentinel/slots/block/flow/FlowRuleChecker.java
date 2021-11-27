@@ -60,7 +60,7 @@ final class FlowRuleChecker {
             // 集群流控
             return passClusterCheck(rule, context, node, acquireCount, prioritized);
         }
-        // 使用单机流控
+        // 使用本地流控
         return passLocalCheck(rule, context, node, acquireCount, prioritized);
     }
 
@@ -80,8 +80,10 @@ final class FlowRuleChecker {
             if (clusterService == null) {
                 return fallbackToLocalOrPass(rule, context, node, acquireCount, prioritized);
             }
+            // 发送请求获取token
             long flowId = rule.getClusterConfig().getFlowId();
             TokenResult result = clusterService.requestToken(flowId, acquireCount, prioritized);
+            // 解析响应
             return applyTokenResult(result, rule, context, node, acquireCount, prioritized);
             // If client is absent, then fallback to local mode.
         } catch (Throwable ex) {
@@ -209,6 +211,7 @@ final class FlowRuleChecker {
         // Origin cannot be `default` or `other`.
         return !RuleConstant.LIMIT_APP_DEFAULT.equals(origin) && !RuleConstant.LIMIT_APP_OTHER.equals(origin);
     }
+
 
     private static boolean fallbackToLocalOrPass(FlowRule rule, Context context, DefaultNode node, int acquireCount,
                                                  boolean prioritized) {

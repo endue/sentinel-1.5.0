@@ -104,6 +104,7 @@ public class ClusterConfigService {
         if (StringUtil.isBlank(app)) {
             return AsyncUtils.newFailedFuture(new IllegalArgumentException("app cannot be empty"));
         }
+        // 获取应用下的所有服务信息
         AppInfo appInfo = appManagement.getDetailApp(app);
         if (appInfo == null || appInfo.getMachines() == null) {
             return CompletableFuture.completedFuture(new ArrayList<>());

@@ -32,6 +32,11 @@ import com.alibaba.csp.sentinel.cluster.server.TokenServiceProvider;
 @RequestType(ClusterConstants.MSG_TYPE_FLOW)
 public class FlowRequestProcessor implements RequestProcessor<FlowRequestData, FlowTokenResponseData> {
 
+    /**
+     * 处理客户端发送过来的流控请求
+     * @param request Sentinel cluster request
+     * @return
+     */
     @Override
     public ClusterResponse<FlowTokenResponseData> processRequest(ClusterRequest<FlowRequestData> request) {
         TokenService tokenService = TokenServiceProvider.getService();

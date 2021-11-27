@@ -67,6 +67,44 @@ public class ClusterAssignController {
         }
     }
 
+    /**
+     * 指定应用{app}的token server配置，示例：注意这里应用内指定token server和单独指定配置不一样
+     * {
+     *     "clusterMap":{
+     *         "machineId":"192.168.6.1",
+     *         "ip":"192.168.6.1",
+     *         "port":10271,
+     *         "clientSet":[
+     *             "192.168.6.1@8091",
+     *             "192.168.6.1@8092"
+     *         ],
+     *         "belongToApp":false,
+     *         "maxAllowedQps":20000
+     *     },
+     *     "remainingList":[
+     *
+     *     ]
+     * }
+     * ----------应用内指定----------
+     * {
+     *     "clusterMap":{
+     *         "machineId":"192.168.6.1@8091",
+     *         "ip":"192.168.6.1",
+     *         "port":18730,
+     *         "clientSet":[
+     *             "192.168.6.1@8092"
+     *         ],
+     *         "belongToApp":true,
+     *         "maxAllowedQps":20000
+     *     },
+     *     "remainingList":[
+     *
+     *     ]
+     * }
+     * @param app
+     * @param assignRequest
+     * @return
+     */
     @PostMapping("/single_server/{app}")
     public Result<ClusterAppAssignResultVO> apiAssignSingleClusterServersOfApp(@PathVariable String app,
                                                                                @RequestBody ClusterAppSingleServerAssignRequest assignRequest) {
@@ -85,6 +123,13 @@ public class ClusterAssignController {
         }
     }
 
+    /**
+     * 移除应用{app}的token server设置，实例：
+     * ["192.168.6.1:10271"]
+     * @param app
+     * @param machineIds token server列表
+     * @return
+     */
     @PostMapping("/unbind_server/{app}")
     public Result<ClusterAppAssignResultVO> apiUnbindClusterServersOfApp(@PathVariable String app,
                                                                          @RequestBody Set<String> machineIds) {

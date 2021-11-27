@@ -183,6 +183,11 @@ public class ClusterConfigController {
         }
     }
 
+    /**
+     * 获取{app}对应的所有服务列表
+     * @param app
+     * @return
+     */
     @GetMapping("/state/{app}")
     public Result<List<ClusterUniversalStatePairVO>> apiGetClusterStateOfApp(@PathVariable String app) {
         if (StringUtil.isEmpty(app)) {

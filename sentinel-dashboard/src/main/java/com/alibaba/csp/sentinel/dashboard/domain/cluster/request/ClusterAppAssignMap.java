@@ -23,15 +23,33 @@ import java.util.Set;
  */
 public class ClusterAppAssignMap {
 
+    /**
+     * token server的ip+port,示例:192.168.6.1:10271
+     */
     private String machineId;
+    /**
+     * token server的ip,示例:192.168.6.1
+     */
     private String ip;
+    /**
+     * token server的port,示例:10271
+     */
     private Integer port;
-
+    /**
+     * token server的类型，true 应用内集群，false 外部指定集群
+     */
     private Boolean belongToApp;
-
+    /**
+     * token server的客户端集合，结构是:ip@port,ip@port
+     */
     private Set<String> clientSet;
-
+    /**
+     * token server管理的命名空间集合
+     */
     private Set<String> namespaceSet;
+    /**
+     * 最大允许QPS
+     */
     private Double maxAllowedQps;
 
     public String getMachineId() {

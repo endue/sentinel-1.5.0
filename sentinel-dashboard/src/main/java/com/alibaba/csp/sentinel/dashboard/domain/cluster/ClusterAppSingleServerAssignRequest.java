@@ -24,8 +24,14 @@ import com.alibaba.csp.sentinel.dashboard.domain.cluster.request.ClusterAppAssig
  * @since 1.4.1
  */
 public class ClusterAppSingleServerAssignRequest {
-
+    /**
+     * 已分配的机器列表,也就是哪些机器作为一个整体来进行集群限流
+     * 对应页面配置中的"已选取的 client 列表"
+     */
     private ClusterAppAssignMap clusterMap;
+    /**
+     * 剩余未分配的集群列表,这些机器不在整体的集群限流中
+     */
     private Set<String> remainingList;
 
     public ClusterAppAssignMap getClusterMap() {

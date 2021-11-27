@@ -532,6 +532,9 @@ public class SentinelApiClient {
         }
         try {
             URIBuilder uriBuilder = new URIBuilder();
+            // 通过API告诉某台应用将其当前模式设置为mode表示的模式
+            // http://<ip>:<port>/setClusterMode?mode=<xxx>
+            // mode值为0表示token client,1表示token server
             uriBuilder.setScheme("http").setHost(ip).setPort(port)
                 .setPath(MODIFY_CLUSTER_MODE_PATH)
                 .setParameter("mode", String.valueOf(mode));
@@ -566,12 +569,21 @@ public class SentinelApiClient {
         }
     }
 
+    /**
+     * 更新集群中token client的配置{告诉他们当前token server的ip、port等}
+     * @param app
+     * @param ip
+     * @param port
+     * @param config
+     * @return
+     */
     public CompletableFuture<Void> modifyClusterClientConfig(String app, String ip, int port, ClusterClientConfig config) {
         if (StringUtil.isBlank(ip) || port <= 0) {
             return AsyncUtils.newFailedFuture(new IllegalArgumentException("Invalid parameter"));
         }
         try {
             URIBuilder uriBuilder = new URIBuilder();
+            // http://ip:port/cluster/client/modifyConfig?data={data}
             uriBuilder.setScheme("http").setHost(ip).setPort(port)
                 .setPath(MODIFY_CLUSTER_CLIENT_CONFIG_PATH)
                 .setParameter("data", JSON.toJSONString(config));

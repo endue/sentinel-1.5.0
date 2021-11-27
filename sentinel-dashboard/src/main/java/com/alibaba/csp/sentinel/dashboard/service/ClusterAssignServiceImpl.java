@@ -61,11 +61,18 @@ public class ClusterAssignServiceImpl implements ClusterAssignService {
         return machineId.contains(":");
     }
 
+    /**
+     * 解除非应用内指定的token server
+     * @param app
+     * @param machineId
+     * @return
+     */
     private ClusterAppAssignResultVO handleUnbindClusterServerNotInApp(String app, String machineId) {
         Set<String> failedSet = new HashSet<>();
         try {
             List<ClusterUniversalStatePairVO> list = clusterConfigService.getClusterUniversalState(app)
                 .get(10, TimeUnit.SECONDS);
+            // 过滤出该token server下的客户端
             Set<String> toModifySet = list.stream()
                 .filter(e -> e.getState().getStateInfo().getMode() == ClusterStateManager.CLUSTER_CLIENT)
                 .filter(e -> machineId.equals(e.getState().getClient().getClientConfig().getServerHost() + ':' +
@@ -73,6 +80,7 @@ public class ClusterAssignServiceImpl implements ClusterAssignService {
                 .map(e -> e.getIp() + '@' + e.getCommandPort())
                 .collect(Collectors.toSet());
             // Modify mode to NOT-STARTED for all associated token clients.
+            // 解绑，修改服务状态从CLUSTER_CLIENT为CLUSTER_NOT_STARTED
             modifyToNonStarted(toModifySet, failedSet);
         } catch (Exception ex) {
             Throwable e = ex instanceof ExecutionException ? ex.getCause() : ex;
@@ -101,7 +109,9 @@ public class ClusterAssignServiceImpl implements ClusterAssignService {
         AssertUtil.assertNotBlank(app, "app cannot be blank");
         AssertUtil.assertNotBlank(machineId, "machineId cannot be blank");
 
+        // 判断是否在应用内指定token server
         if (isMachineInApp(machineId)) {
+            // 非应用内指定token server
             return handleUnbindClusterServerNotInApp(app, machineId);
         }
         Set<String> failedSet = new HashSet<>();
@@ -149,26 +159,37 @@ public class ClusterAssignServiceImpl implements ClusterAssignService {
         Set<String> failedClientSet = new HashSet<>();
 
         // Assign server and apply config.
+        // 处理clusterMap中的token server(需要指定belongToApp为true)
         clusterMap.stream()
             .filter(Objects::nonNull)
-            .filter(ClusterAppAssignMap::getBelongToApp)
+            .filter(ClusterAppAssignMap::getBelongToApp) // 过滤出在应用内被指定为token server的服务
             .map(e -> {
+                // 解析出token server的ip、port
                 String ip = e.getIp();
                 int commandPort = parsePort(e);
+                // 通知这个在应用内指定为token server的服务，让它角色转变为CLUSTER_SERVER
                 CompletableFuture<Void> f = modifyMode(ip, commandPort, ClusterStateManager.CLUSTER_SERVER)
+                        // 修改token server的相关配置
                     .thenCompose(v -> applyServerConfigChange(app, ip, commandPort, e));
+                // 返回结果
                 return Tuple2.of(e.getMachineId(), f);
             })
+                // 等待最终执行的结果，如果处理失败记录到failedServerSet集合中
             .forEach(t -> handleFutureSync(t, failedServerSet));
 
         // Assign client of servers and apply config.
+        // 处理clusterMap中的clientSet
         clusterMap.parallelStream()
             .filter(Objects::nonNull)
+                // 通知clientSet中的服务将他们的角色转变为CLUSTER_CLIENT，同时更新他们token server的信息
+                // 如果处理失败记录到failedClientSet集合中
             .forEach(e -> applyAllClientConfigChange(app, e, failedClientSet));
 
         // Unbind remaining (unassigned) machines.
+        // 处理remainingList，将他们的角色变为CLUSTER_NOT_STARTED
         applyAllRemainingMachineSet(app, remainingSet, failedClientSet);
 
+        // 返回处理结果
         return new ClusterAppAssignResultVO()
             .setFailedClientSet(failedClientSet)
             .setFailedServerSet(failedServerSet);
@@ -192,21 +213,31 @@ public class ClusterAssignServiceImpl implements ClusterAssignService {
             .forEach(t -> handleFutureSync(t, failedSet));
     }
 
+    /**
+     * 更新所有指定的token client服务的信息
+     * @param app
+     * @param assignMap
+     * @param failedSet
+     */
     private void applyAllClientConfigChange(String app, ClusterAppAssignMap assignMap,
                                             Set<String> failedSet) {
         Set<String> clientSet = assignMap.getClientSet();
         if (clientSet == null || clientSet.isEmpty()) {
             return;
         }
+        // token server的ip和port
         final String serverIp = assignMap.getIp();
         final int serverPort = assignMap.getPort();
+        // 解析所有的token client
         clientSet.stream()
             .map(MachineUtils::parseCommandIpAndPort)
             .filter(Optional::isPresent)
             .map(Optional::get)
             .map(ipPort -> {
                 CompletableFuture<Void> f = sentinelApiClient
+                        // 通知这些服务，当前状态为token client
                     .modifyClusterMode(ipPort.r1, ipPort.r2, ClusterStateManager.CLUSTER_CLIENT)
+                        // 通知这些服务，当前的token server的ip和port
                     .thenCompose(v -> sentinelApiClient.modifyClusterClientConfig(app, ipPort.r1, ipPort.r2,
                         new ClusterClientConfig().setRequestTimeout(20)
                             .setServerHost(serverIp)
@@ -214,6 +245,7 @@ public class ClusterAssignServiceImpl implements ClusterAssignService {
                     ));
                 return Tuple2.of(ipPort.r1 + '@' + ipPort.r2, f);
             })
+                // 记录最终结果到failedSet
             .forEach(t -> handleFutureSync(t, failedSet));
     }
 
@@ -230,13 +262,24 @@ public class ClusterAssignServiceImpl implements ClusterAssignService {
         }
     }
 
+    /**
+     * 更新token server的相关配置
+     * @param app
+     * @param ip
+     * @param commandPort
+     * @param assignMap
+     * @return
+     */
     private CompletableFuture<Void> applyServerConfigChange(String app, String ip, int commandPort,
                                                             ClusterAppAssignMap assignMap) {
         ServerTransportConfig transportConfig = new ServerTransportConfig()
             .setPort(assignMap.getPort())
             .setIdleSeconds(600);
+        // 修改token server的port和idleSeconds
         return sentinelApiClient.modifyClusterServerTransportConfig(app, ip, commandPort, transportConfig)
+                // 修改token server的maxAllowedQps
             .thenCompose(v -> applyServerFlowConfigChange(app, ip, commandPort, assignMap))
+                // 修改token server的namespaceSet
             .thenCompose(v -> applyServerNamespaceSetConfig(app, ip, commandPort, assignMap));
     }
 
