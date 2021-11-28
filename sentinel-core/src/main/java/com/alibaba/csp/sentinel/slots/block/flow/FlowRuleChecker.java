@@ -80,7 +80,7 @@ final class FlowRuleChecker {
             if (clusterService == null) {
                 return fallbackToLocalOrPass(rule, context, node, acquireCount, prioritized);
             }
-            // 发送请求获取token
+            // 获取流控规则中flowId,保证全局唯一
             long flowId = rule.getClusterConfig().getFlowId();
             TokenResult result = clusterService.requestToken(flowId, acquireCount, prioritized);
             // 解析响应

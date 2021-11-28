@@ -49,7 +49,7 @@ public class DemoClusterInitFunc implements InitFunc {
 
     private static final String APP_NAME = AppNameUtil.getAppName();
 
-    private final String remoteAddress = "localhost";
+    private final String remoteAddress = "192.168.6.139";
     private final String groupId = "SENTINEL_GROUP";
 
     private final String flowDataId = APP_NAME + DemoConstants.FLOW_POSTFIX;

@@ -369,6 +369,9 @@ public final class ClusterFlowRuleManager {
         NAMESPACE_FLOW_ID_MAP.put(namespace, flowIdSet);
     }
 
+    /**
+     * 监听配置变更，一个namespace对应一个
+     */
     private static final class FlowRulePropertyListener implements PropertyListener<List<FlowRule>> {
 
         private final String namespace;

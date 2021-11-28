@@ -55,15 +55,16 @@ final class ClusterFlowChecker {
     static TokenResult acquireClusterToken(/*@Valid*/ FlowRule rule, int acquireCount, boolean prioritized) {
         Long id = rule.getClusterConfig().getFlowId();
 
+        // 校验flowId所处的namespace的QPS是否达到阈值
         if (!allowProceed(id)) {
             return new TokenResult(TokenResultStatus.TOO_MANY_REQUEST);
         }
-
+        // 获取对应flowId的统计信息
         ClusterMetric metric = ClusterMetricStatistics.getMetric(id);
         if (metric == null) {
             return new TokenResult(TokenResultStatus.FAIL);
         }
-
+        // 校验请求是否通过并返回响应
         double latestQps = metric.getAvg(ClusterFlowEvent.PASS_REQUEST);
         double globalThreshold = calcGlobalThreshold(rule) * ClusterServerConfigManager.getExceedCount();
         double nextRemaining = globalThreshold - latestQps - acquireCount;
