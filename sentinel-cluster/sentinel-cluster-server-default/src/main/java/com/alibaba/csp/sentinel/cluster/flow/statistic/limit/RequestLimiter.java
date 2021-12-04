@@ -23,13 +23,19 @@ import com.alibaba.csp.sentinel.slots.statistic.base.UnaryLeapArray;
 import com.alibaba.csp.sentinel.util.AssertUtil;
 
 /**
+ * 请求限制器
  * @author Eric Zhao
  * @since 1.4.1
  */
 public class RequestLimiter {
 
+    /**
+     * 总QPS量，小于等于该值请求才可以通过
+     */
     private double qpsAllowed;
-
+    /**
+     * 滑动窗口，记录QPS量
+     */
     private final LeapArray<LongAdder> data;
 
     public RequestLimiter(double qpsAllowed) {

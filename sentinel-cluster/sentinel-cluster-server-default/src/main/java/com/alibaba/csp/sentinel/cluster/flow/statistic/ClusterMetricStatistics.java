@@ -29,6 +29,11 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
  */
 public final class ClusterMetricStatistics {
 
+    /**
+     * 集群流控统计
+     * key是flowId
+     * value是集群统计
+     */
     private static final Map<Long, ClusterMetric> METRIC_MAP = new ConcurrentHashMap<>();
 
     public static void clear() {

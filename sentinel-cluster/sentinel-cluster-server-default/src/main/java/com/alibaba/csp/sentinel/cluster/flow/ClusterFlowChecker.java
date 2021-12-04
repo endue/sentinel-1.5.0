@@ -55,7 +55,7 @@ final class ClusterFlowChecker {
     static TokenResult acquireClusterToken(/*@Valid*/ FlowRule rule, int acquireCount, boolean prioritized) {
         Long id = rule.getClusterConfig().getFlowId();
 
-        // 校验flowId所处的namespace的QPS是否达到阈值
+        // 校验flowId所处的namespace的QPS是否达到阈值，判断是否允许请求通过
         if (!allowProceed(id)) {
             return new TokenResult(TokenResultStatus.TOO_MANY_REQUEST);
         }

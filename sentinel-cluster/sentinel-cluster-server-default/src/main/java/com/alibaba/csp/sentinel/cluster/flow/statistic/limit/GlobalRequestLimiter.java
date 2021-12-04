@@ -27,6 +27,11 @@ import com.alibaba.csp.sentinel.util.AssertUtil;
  */
 public final class GlobalRequestLimiter {
 
+    /**
+     * 命名空间总请求限制器
+     * key是namespace
+     * value是限制器
+     */
     private static final Map<String, RequestLimiter> GLOBAL_QPS_LIMITER_MAP = new ConcurrentHashMap<>();
 
     public static void initIfAbsent(String namespace) {
