@@ -27,6 +27,7 @@ import com.alibaba.csp.sentinel.property.SentinelProperty;
 import com.alibaba.csp.sentinel.util.TimeUtil;
 
 /**
+ * sentinel的状态管理器用于token server和token client的来回切换
  * <p>
  * Global state manager for Sentinel cluster.
  * This enables switching between cluster token client and server mode.

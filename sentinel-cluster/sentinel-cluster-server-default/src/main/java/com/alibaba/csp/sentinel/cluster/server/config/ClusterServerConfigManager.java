@@ -39,6 +39,7 @@ import com.alibaba.csp.sentinel.slots.block.flow.FlowRuleUtil;
 import com.alibaba.csp.sentinel.util.AssertUtil;
 
 /**
+ * 集群配置管理
  * @author Eric Zhao
  * @since 1.4.0
  */
@@ -48,13 +49,16 @@ public final class ClusterServerConfigManager {
 
     /**
      * Server global transport and scope config.
+     * token server的ip和超时时间
      */
     private static volatile int port = ClusterConstants.DEFAULT_CLUSTER_SERVER_PORT;
     private static volatile int idleSeconds = ServerTransportConfig.DEFAULT_IDLE_SECONDS;
+    // token server管理的命名空间
     private static volatile Set<String> namespaceSet = Collections.singleton(ServerConstants.DEFAULT_NAMESPACE);
 
     /**
      * Server global flow config.
+     * token server全局流配置
      */
     private static volatile double exceedCount = ServerFlowConfig.DEFAULT_EXCEED_COUNT;
     private static volatile double maxOccupyRatio = ServerFlowConfig.DEFAULT_MAX_OCCUPY_RATIO;
@@ -83,6 +87,7 @@ public final class ClusterServerConfigManager {
      */
     private static SentinelProperty<ServerFlowConfig> globalFlowProperty = new DynamicSentinelProperty<>();
 
+    // 动态配置的监听器
     private static final PropertyListener<ServerTransportConfig> TRANSPORT_PROPERTY_LISTENER
         = new ServerGlobalTransportPropertyListener();
     private static final PropertyListener<ServerFlowConfig> GLOBAL_FLOW_PROPERTY_LISTENER
@@ -236,6 +241,7 @@ public final class ClusterServerConfigManager {
             newSet.add(ConfigSupplierRegistry.getNamespaceSupplier().get());
         }
 
+        // 删除掉一部分旧的不在负责的namespace
         Set<String> oldSet = ClusterServerConfigManager.namespaceSet;
         if (oldSet != null && !oldSet.isEmpty()) {
             for (String ns : oldSet) {
@@ -247,6 +253,7 @@ public final class ClusterServerConfigManager {
             }
         }
 
+        // 添加新的namespace
         ClusterServerConfigManager.namespaceSet = newSet;
         for (String ns : newSet) {
             // Register the rule property if needed.

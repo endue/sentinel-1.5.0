@@ -81,10 +81,13 @@ public final class ClusterFlowRuleManager {
 
     /**
      * (namespace, property-listener wrapper)
+     * key是命名空间namespace
+     * value是对应的命名空间包装类
      */
     private static final Map<String, NamespaceFlowProperty<FlowRule>> PROPERTY_MAP = new ConcurrentHashMap<>();
     /**
      * Cluster flow rule property supplier for a specific namespace.
+     * 监听动态规则管理器
      */
     private static volatile Function<String, SentinelProperty<List<FlowRule>>> propertySupplier
         = DEFAULT_PROPERTY_SUPPLIER;
@@ -160,6 +163,7 @@ public final class ClusterFlowRuleManager {
         PropertyListener<List<FlowRule>> listener = new FlowRulePropertyListener(namespace);
         property.addListener(listener);
         PROPERTY_MAP.put(namespace, new NamespaceFlowProperty<>(namespace, property, listener));
+        // 还未初始化命名空间对应的flowId集合，那么初始化一下
         Set<Long> flowIdSet = NAMESPACE_FLOW_ID_MAP.get(namespace);
         if (flowIdSet == null) {
             resetNamespaceFlowIdMapFor(namespace);
@@ -328,7 +332,7 @@ public final class ClusterFlowRuleManager {
         final ConcurrentHashMap<Long, FlowRule> ruleMap = new ConcurrentHashMap<>();
 
         Set<Long> flowIdSet = new HashSet<>();
-
+        // 遍历集群流控规则
         for (FlowRule rule : list) {
             if (!rule.isClusterMode()) {
                 continue;
@@ -345,26 +349,30 @@ public final class ClusterFlowRuleManager {
             // Flow id should not be null after filtered.
             ClusterFlowConfig clusterConfig = rule.getClusterConfig();
             Long flowId = clusterConfig.getFlowId();
+            // 忽略flowId为空的FlowRule
             if (flowId == null) {
                 continue;
             }
             ruleMap.put(flowId, rule);
+            // 记录flowId和对应的namespace
             FLOW_NAMESPACE_MAP.put(flowId, namespace);
             flowIdSet.add(flowId);
 
             // Prepare cluster metric from valid flow ID.
+            // 这里一个flowId对应一个集群统计对象
             ClusterMetricStatistics.putMetricIfAbsent(flowId,
                 new ClusterMetric(clusterConfig.getSampleCount(), clusterConfig.getWindowIntervalMs()));
         }
 
         // Cleanup unused cluster metrics.
+        // 删除FLOW_RULES、NAMESPACE_FLOW_ID_MAP、ClusterMetricStatistics中记录的旧flowId对应的一些配置
         clearAndResetRulesConditional(namespace, new Predicate<Long>() {
             @Override
             public boolean test(Long flowId) {
                 return !ruleMap.containsKey(flowId);
             }
         });
-
+        // 添加新的flowId
         FLOW_RULES.putAll(ruleMap);
         NAMESPACE_FLOW_ID_MAP.put(namespace, flowIdSet);
     }

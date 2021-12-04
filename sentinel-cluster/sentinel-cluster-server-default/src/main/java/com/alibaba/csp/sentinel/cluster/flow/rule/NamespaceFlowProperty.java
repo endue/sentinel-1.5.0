@@ -30,8 +30,17 @@ import com.alibaba.csp.sentinel.property.SentinelProperty;
  */
 class NamespaceFlowProperty<T> {
 
+    /**
+     * 命名空间
+     */
     private final String namespace;
+    /**
+     * 这里怎么形容？我也不知道
+     */
     private final SentinelProperty<List<T>> property;
+    /**
+     * 配置变更监听器
+     */
     private final PropertyListener<List<T>> listener;
 
     public NamespaceFlowProperty(String namespace,
