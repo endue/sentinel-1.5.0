@@ -101,7 +101,7 @@ final class ClusterFlowChecker {
             metric.add(ClusterFlowEvent.BLOCK, acquireCount);
             metric.add(ClusterFlowEvent.BLOCK_REQUEST, 1);
             ClusterServerStatLogUtil.log("flow|block|" + id, acquireCount);
-            ClusterServerStatLogUtil.log("flow|block_request|" + id, 1);
+            ClusterServerStatLogUtil.log( "flow|block_request|" + id, 1);
             if (prioritized) {
                 // Add prioritized block.
                 metric.add(ClusterFlowEvent.OCCUPIED_BLOCK, acquireCount);
